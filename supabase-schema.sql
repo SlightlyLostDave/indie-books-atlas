@@ -98,6 +98,8 @@ CREATE TABLE stores (
   email                 text,
   website               text,
   instagram             text,                         -- handle only, no full URL
+  bluesky               text,                         -- handle only
+  tiktok                text,                         -- handle only
   twitter               text,                         -- handle only
   facebook              text,                         -- handle only
   bookshop_org_url      text,                         -- full URL, affiliate tag appended at render time
