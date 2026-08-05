@@ -45,3 +45,29 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
 }
+
+@keyframes loading-bar-sweep {
+  0% {
+    transform: translateX(-100%) scaleX(0.4);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(120%) scaleX(0.4);
+  }
+}
+
+.loading-bar-track {
+  position: relative;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.loading-bar-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, transparent, var(--amber), var(--moss), transparent);
+  animation: loading-bar-sweep 1.6s ease-in-out infinite;
+}
