@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Indie Books Atlas
 
-## Getting Started
+A living, data-driven map of every independent bookstore in Canada - shipping at **indiebooksatlas.ca**.
 
-First, run the development server:
+Indie Books Atlas pulls store data from OpenStreetMap, the CIBA member directory, ALQ, Wikidata, Google Places, and community submissions into one canonical, PostGIS-backed dataset, and presents it as a clustered, filterable map with a page per store and a curated events calendar for Canadian book fairs. It's built to be community infrastructure first - a resource the Canadian literary world can rely on - and a geospatial showcase second.
+
+This repo is the **Next.js site**. Data ingestion (OSM sync, Google Places enrichment, source merging) lives in the sibling [`indie-books-atlas-pipeline`](https://github.com/SlightlyLostDave/indie-books-atlas-pipeline) repo.
+
+## Status
+
+Phase 1 (Data Foundation) is nearly complete upstream: the Supabase/PostGIS schema is provisioned and the pipeline repo is scaffolded, with the seed/sync/enrich jobs as the live next step there. This app repo is pre-MVP-build - currently the default `create-next-app` scaffold, with the map, store pages, events calendar, and submission form still to come.
+
+## Stack
+
+- **Next.js** (App Router)
+- **Supabase** - Postgres + PostGIS, auth, RLS (`@supabase/ssr`)
+- **Mapbox GL JS** - clustered map
+- **Tailwind** - styling
+- **Resend** - transactional email (submissions, digests)
+- **Vercel** - hosting, preview deployments per PR
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Env vars (not yet configured in this repo - wiring is a Phase 2 step):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+RESEND_API_KEY=
+```
 
-## Learn More
+## Design
 
-To learn more about Next.js, take a look at the following resources:
+The site follows a dark, warm field-manual aesthetic - moss green and amber on a deep ink background, Playfair Display for headers, Jost for body text, IBM Plex Mono for labels. For layout and editorial pacing, [archaeological-greece.vercel.app](https://archaeological-greece.vercel.app/) is a useful reference point: a map-atlas site with a warm, card-based, "field guide" feel rather than a generic directory look.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`AGENTS.md`](./AGENTS.md) for working with this codebase - this project tracks Next.js closely and pins to docs bundled in `node_modules/next/dist/docs/` rather than assuming API stability across versions. See [`CLAUDE.md`](./CLAUDE.md) for the full architecture and data contract.
