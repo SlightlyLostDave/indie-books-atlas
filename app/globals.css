@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --bg: #100e0b;
   --bg-raised: #19150f;
@@ -13,6 +15,21 @@
   --line: rgba(124, 154, 85, 0.18);
   --line-strong: rgba(124, 154, 85, 0.34);
   --amber-line: rgba(212, 154, 74, 0.4);
+}
+
+:root.light {
+  --bg: #f6f1e7;
+  --bg-raised: #fffdf9;
+  --bg-step: #efe8da;
+  --ink: #241f16;
+  --ink-dim: #5c5343;
+  --ink-faint: #8a7f6c;
+  --moss: #5c7340;
+  --moss-deep: #4a5c33;
+  --amber: #a9701f;
+  --line: rgba(92, 115, 64, 0.18);
+  --line-strong: rgba(92, 115, 64, 0.34);
+  --amber-line: rgba(169, 112, 31, 0.4);
 }
 
 @theme inline {

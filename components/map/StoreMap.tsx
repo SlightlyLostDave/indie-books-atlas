@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types";
+import { useTheme } from "@/lib/useTheme";
 
 interface StoreMapProps {
   initialData: StoreFeatureCollection;
@@ -13,15 +14,28 @@ interface StoreMapProps {
 
 const SOURCE_ID = "stores";
 
+const MAP_STYLES = {
+  dark: "mapbox://styles/mapbox/dark-v11",
+  light: "mapbox://styles/mapbox/light-v11",
+} as const;
+
 export default function StoreMap({ initialData, onSelectStore, selectedSlug }: StoreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const selectedSlugRef = useRef<string | null | undefined>(null);
+  const theme = useTheme();
 
   const onSelectStoreRef = useRef(onSelectStore);
   useEffect(() => {
     onSelectStoreRef.current = onSelectStore;
   }, [onSelectStore]);
+
+  const initialDataRef = useRef(initialData);
+  useEffect(() => {
+    initialDataRef.current = initialData;
+  }, [initialData]);
+
+  const initialThemeRef = useRef(theme);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -33,19 +47,20 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
     }
     mapboxgl.accessToken = mapboxToken;
 
-    // TODO: swap for a custom Mapbox Studio style matching the moss/amber/ink palette.
+    // TODO: swap for custom Mapbox Studio styles matching the moss/amber/ink palette.
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: MAP_STYLES[initialThemeRef.current],
       center: [-96, 56], // roughly centred on Canada
       zoom: 3,
     });
     mapRef.current = map;
+    const initializedRef = { current: false };
 
-    map.on("load", () => {
+    const addStoreLayers = () => {
       map.addSource(SOURCE_ID, {
         type: "geojson",
-        data: initialData,
+        data: initialDataRef.current,
         cluster: true,
         clusterMaxZoom: 13,
         clusterRadius: 50,
@@ -141,13 +156,31 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
       map.on("mouseleave", "clusters", () => {
         map.getCanvas().style.cursor = "";
       });
+    };
+
+    map.once("load", () => {
+      addStoreLayers();
+      initializedRef.current = true;
+    });
+    map.on("style.load", () => {
+      if (!initializedRef.current) return;
+      addStoreLayers();
+      if (selectedSlugRef.current) {
+        map.setFeatureState({ source: SOURCE_ID, id: selectedSlugRef.current }, { selected: true });
+      }
     });
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [initialData]);
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    map.setStyle(MAP_STYLES[theme]);
+  }, [theme]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -164,7 +197,7 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
       selectedSlugRef.current = selectedSlug ?? null;
     };
 
-    if (map.isStyleLoaded()) {
+    if (map.isStyleLoaded() && map.getSource(SOURCE_ID)) {
       applySelection();
     } else {
       map.once("load", applySelection);
