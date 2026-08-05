@@ -37,10 +37,6 @@ NEXT_PUBLIC_MAPBOX_TOKEN=
 RESEND_API_KEY=
 ```
 
-## Design
-
-The site follows a dark, warm field-manual aesthetic - moss green and amber on a deep ink background, Playfair Display for headers, Jost for body text, IBM Plex Mono for labels. For layout and editorial pacing, [archaeological-greece.vercel.app](https://archaeological-greece.vercel.app/) is a useful reference point: a map-atlas site with a warm, card-based, "field guide" feel rather than a generic directory look.
-
 ## Contributing
 
 See [`AGENTS.md`](./AGENTS.md) for working with this codebase - this project tracks Next.js closely and pins to docs bundled in `node_modules/next/dist/docs/` rather than assuming API stability across versions. See [`CLAUDE.md`](./CLAUDE.md) for the full architecture and data contract.
