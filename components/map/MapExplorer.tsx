@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StoreMap from "@/components/map/StoreMap";
+import BrowseSidebar from "@/components/map/BrowseSidebar";
 import StoreSidebar from "@/components/store/StoreSidebar";
 import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types";
 
@@ -21,7 +22,11 @@ export default function MapExplorer({ initialData }: MapExplorerProps) {
           selectedSlug={selectedStore?.slug}
         />
       </div>
-      <StoreSidebar store={selectedStore} onClose={() => setSelectedStore(null)} />
+      {selectedStore ? (
+        <StoreSidebar store={selectedStore} onClose={() => setSelectedStore(null)} />
+      ) : (
+        <BrowseSidebar initialData={initialData} />
+      )}
     </div>
   );
 }
