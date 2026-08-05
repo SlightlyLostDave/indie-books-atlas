@@ -3,17 +3,25 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { StoreFeatureCollection } from "@/lib/types";
+import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types";
 
 interface StoreMapProps {
   initialData: StoreFeatureCollection;
+  onSelectStore: (properties: StoreFeatureProperties) => void;
+  selectedSlug: string | null | undefined;
 }
 
 const SOURCE_ID = "stores";
 
-export default function StoreMap({ initialData }: StoreMapProps) {
+export default function StoreMap({ initialData, onSelectStore, selectedSlug }: StoreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const selectedSlugRef = useRef<string | null | undefined>(null);
+
+  const onSelectStoreRef = useRef(onSelectStore);
+  useEffect(() => {
+    onSelectStoreRef.current = onSelectStore;
+  }, [onSelectStore]);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -36,6 +44,7 @@ export default function StoreMap({ initialData }: StoreMapProps) {
         cluster: true,
         clusterMaxZoom: 13,
         clusterRadius: 50,
+        promoteId: "slug",
       });
 
       map.addLayer({
@@ -73,10 +82,38 @@ export default function StoreMap({ initialData }: StoreMapProps) {
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-color": "#d49a4a",
-          "circle-radius": 6,
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#100e0b",
+          "circle-radius": [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            10,
+            6,
+          ],
+          "circle-stroke-width": [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            2.5,
+            1.5,
+          ],
+          "circle-stroke-color": [
+            "case",
+            ["boolean", ["feature-state", "selected"], false],
+            "#ece4d6",
+            "#100e0b",
+          ],
         },
+      });
+
+      map.on("click", "unclustered-point", (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        onSelectStoreRef.current(feature.properties as StoreFeatureProperties);
+      });
+
+      map.on("mouseenter", "unclustered-point", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "unclustered-point", () => {
+        map.getCanvas().style.cursor = "";
       });
 
       map.on("click", "clusters", (e) => {
@@ -106,6 +143,28 @@ export default function StoreMap({ initialData }: StoreMapProps) {
       mapRef.current = null;
     };
   }, [initialData]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const applySelection = () => {
+      const previousSlug = selectedSlugRef.current;
+      if (previousSlug) {
+        map.removeFeatureState({ source: SOURCE_ID, id: previousSlug });
+      }
+      if (selectedSlug) {
+        map.setFeatureState({ source: SOURCE_ID, id: selectedSlug }, { selected: true });
+      }
+      selectedSlugRef.current = selectedSlug ?? null;
+    };
+
+    if (map.isStyleLoaded()) {
+      applySelection();
+    } else {
+      map.once("load", applySelection);
+    }
+  }, [selectedSlug]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

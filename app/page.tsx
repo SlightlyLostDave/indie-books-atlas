@@ -1,5 +1,6 @@
-import StoreMap from "@/components/map/StoreMap";
-import { getStoresGeoJSON } from "@/lib/stores";
+import MapExplorer from '@/components/map/MapExplorer';
+import Footer from '@/components/layout/Footer';
+import { getStoresGeoJSON } from '@/lib/stores';
 
 export default async function HomePage() {
   const geojson = await getStoresGeoJSON();
@@ -15,11 +16,11 @@ export default async function HomePage() {
         </p>
       </header>
 
-      <main className="flex-1 p-4">
-        <div className="h-[75vh] w-full overflow-hidden rounded-md border border-line">
-          <StoreMap initialData={geojson} />
-        </div>
+      <main className="flex min-h-0 flex-1 flex-col">
+        <MapExplorer initialData={geojson} />
       </main>
+
+      <Footer />
     </div>
   );
 }
