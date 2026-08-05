@@ -1,9 +1,11 @@
+const YEAR = new Date().getFullYear();
+
 export default function Footer() {
   return (
     <footer className="border-t border-line px-6 py-5">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <p className="font-mono text-xs uppercase tracking-widest text-ink-faint">
-          © {new Date().getFullYear()} Indie Books Atlas
+          © {YEAR} Indie Books Atlas
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <a

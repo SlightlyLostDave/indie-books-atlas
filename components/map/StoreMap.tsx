@@ -26,7 +26,12 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!mapboxToken) {
+      console.error("Missing NEXT_PUBLIC_MAPBOX_TOKEN environment variable.");
+      return;
+    }
+    mapboxgl.accessToken = mapboxToken;
 
     // TODO: swap for a custom Mapbox Studio style matching the moss/amber/ink palette.
     const map = new mapboxgl.Map({
