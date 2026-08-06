@@ -37,14 +37,14 @@ export default function BrowseSidebar({ initialData }: BrowseSidebarProps) {
   const storeCount = initialData.features.length;
 
   return (
-    <aside className="hidden md:block md:w-[380px] md:flex-shrink-0 md:overflow-y-auto md:border-l md:border-line md:bg-bg-raised md:p-6">
+    <aside className="hidden md:block md:w-95 md:shrink-0 md:overflow-y-auto md:border-l md:border-line md:bg-bg-raised md:p-6">
       <h2 className="font-display text-xl font-semibold text-ink">
         Every independent bookstore in Canada. Eventually.
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         This is a working map, built one shop at a time. Independently owned
         only. Tap a pin for hours, specialties, and the reason to go. Found one
-        that's missing? Tell me.
+        that&rsquo;s missing? Tell me.
       </p>
 
       <p className="mt-4 font-mono text-xs uppercase tracking-widest text-amber">
@@ -124,10 +124,11 @@ export default function BrowseSidebar({ initialData }: BrowseSidebarProps) {
           Under the hood
         </h3>
         <p className="mt-3 text-xs leading-relaxed text-ink-faint">
-          A Python pipeline pulls from OpenStreetMap, diffs against what&apos;s
-          already stored, enriches from store websites, and writes to Supabase
-          Postgres with PostGIS. Every record carries a completeness score.
-          The map queries it live.
+          A Python pipeline pulls from OpenStreetMap, CIBA, and WikiData. It
+          then diffs against what&apos;s already stored, enriches from store
+          websites from Google Places data, and writes to Supabase Postgres with
+          PostGIS. Every record carries a completeness score. The map queries it
+          live.
         </p>
       </div>
     </aside>
