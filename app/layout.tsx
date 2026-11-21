@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Jost, IBM_Plex_Mono, Cinzel } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/site";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -30,6 +31,7 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Indie Books Atlas",
   description:
     "A live, data-driven map of every indie bookstore in Canada.",

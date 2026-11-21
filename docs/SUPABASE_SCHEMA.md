@@ -20,6 +20,7 @@ Canonical record per bookstore location.
 | `slug` | text, unique | **Immutable after insert** — never update, it's the public URL |
 | `location` | `geography(Point, 4326)` | Primary spatial column |
 | `lat`, `lng` | numeric | Denormalized from `location` for convenience |
+| `address_line1`, `address_line2` | text, nullable | Street address lines, shown on `/stores/[slug]` |
 | `city`, `province`, `postal_code` | text | |
 | `phone`, `website`, `instagram` | text, nullable | |
 | `short_description` | text, nullable | |

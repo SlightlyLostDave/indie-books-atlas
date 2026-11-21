@@ -21,3 +21,38 @@ export interface StoreFeatureCollection {
   type: "FeatureCollection";
   features: StoreFeature[];
 }
+
+/** Day keys used by `stores.hours_parsed`. `ph` = public holiday. */
+export type DayKey = "mo" | "tu" | "we" | "th" | "fr" | "sa" | "su" | "ph";
+
+export interface DayHours {
+  open?: string;
+  close?: string;
+  closed?: boolean;
+}
+
+/** Shape of `stores.hours_parsed`. An absent key means unknown, not closed. */
+export type HoursParsed = Partial<Record<DayKey, DayHours>>;
+
+/** Public, RLS-visible store record used by `/stores/[slug]`. */
+export interface PublicStore {
+  id: string | number;
+  slug: string;
+  name: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  lat: number | null;
+  lng: number | null;
+  phone: string | null;
+  website: string | null;
+  instagram: string | null;
+  short_description: string | null;
+  hours_raw: string | null;
+  hours_parsed: HoursParsed | null;
+  specialties: string[] | null;
+  is_permanently_closed: boolean;
+  updated_at: string;
+}

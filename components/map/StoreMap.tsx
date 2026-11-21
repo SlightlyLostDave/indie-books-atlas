@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types";
 import { useTheme } from "@/lib/useTheme";
+import { MAP_STYLES } from "@/lib/map";
 
 interface StoreMapProps {
   initialData: StoreFeatureCollection;
@@ -13,11 +14,6 @@ interface StoreMapProps {
 }
 
 const SOURCE_ID = "stores";
-
-const MAP_STYLES = {
-  dark: "mapbox://styles/mapbox/dark-v11",
-  light: "mapbox://styles/mapbox/light-v11",
-} as const;
 
 export default function StoreMap({ initialData, onSelectStore, selectedSlug }: StoreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,7 +43,6 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
     }
     mapboxgl.accessToken = mapboxToken;
 
-    // TODO: swap for custom Mapbox Studio styles matching the moss/amber/ink palette.
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: MAP_STYLES[initialThemeRef.current],

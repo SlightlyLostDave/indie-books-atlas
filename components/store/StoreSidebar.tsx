@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { StoreFeatureProperties } from "@/lib/types";
+import { specialtyLabel } from "@/lib/specialties";
 
 interface StoreSidebarProps {
   store: StoreFeatureProperties | null;
@@ -71,7 +72,7 @@ export default function StoreSidebar({ store, onClose }: StoreSidebarProps) {
                 key={tag}
                 className="rounded-full bg-moss-deep/40 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-moss"
               >
-                {tag}
+                {specialtyLabel(tag)}
               </span>
             ))}
           </div>
