@@ -12,7 +12,7 @@ The pipeline merges data from seven sources by priority: `manual > ciba > alq > 
 
 ## Current status
 
-Phase 1 (Data Foundation) is nearly done: the Supabase schema is provisioned with PostGIS, and the pipeline repo is scaffolded. The live next step upstream is pipeline step 1.4 (writing the seed/sync/enrich jobs). This app repo itself is pre-2.1 — still the default `create-next-app` scaffold, nothing built yet.
+Phase 1 (Data Foundation) is nearly done: the Supabase schema is provisioned with PostGIS, and the pipeline repo is scaffolded. The live next step upstream is pipeline step 1.4 (writing the seed/sync/enrich jobs). In this app repo: the map home (`/`), the admin views (`/admin`), and store detail pages (`/stores/[slug]`: SSG + daily ISR, `BookStore` JSON-LD, sitemap at `/sitemap.xml`) are built. `/submit` is a stub form that reads `?store=&id=&name=` from the store page's "Suggest a correction" link but doesn't submit yet; the insert waits on the `submissions` columns being documented.
 
 ## Stack
 
