@@ -8,9 +8,11 @@ import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types
 
 interface MapExplorerProps {
   initialData: StoreFeatureCollection;
+  /** ISO timestamp of the last successful data sync, if known. */
+  lastSyncedAt: string | null;
 }
 
-export default function MapExplorer({ initialData }: MapExplorerProps) {
+export default function MapExplorer({ initialData, lastSyncedAt }: MapExplorerProps) {
   const [selectedStore, setSelectedStore] = useState<StoreFeatureProperties | null>(null);
 
   return (
@@ -25,7 +27,7 @@ export default function MapExplorer({ initialData }: MapExplorerProps) {
       {selectedStore ? (
         <StoreSidebar store={selectedStore} onClose={() => setSelectedStore(null)} />
       ) : (
-        <BrowseSidebar initialData={initialData} />
+        <BrowseSidebar initialData={initialData} lastSyncedAt={lastSyncedAt} />
       )}
     </div>
   );

@@ -1,10 +1,14 @@
 import MapExplorer from '@/components/map/MapExplorer';
 import Footer from '@/components/layout/Footer';
 import ThemeToggle from '@/components/layout/ThemeToggle';
+import { getLastSyncedAt } from '@/lib/freshness';
 import { getStoresGeoJSON } from '@/lib/stores';
 
 export default async function HomePage() {
-  const geojson = await getStoresGeoJSON();
+  const [geojson, lastSyncedAt] = await Promise.all([
+    getStoresGeoJSON(),
+    getLastSyncedAt(),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -21,7 +25,10 @@ export default async function HomePage() {
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col">
-        <MapExplorer initialData={geojson} />
+        <MapExplorer
+          initialData={geojson}
+          lastSyncedAt={lastSyncedAt?.toISOString() ?? null}
+        />
       </main>
 
       <Footer />

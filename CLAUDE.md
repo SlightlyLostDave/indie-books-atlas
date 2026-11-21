@@ -12,7 +12,7 @@ The pipeline merges data from seven sources by priority: `manual > ciba > alq > 
 
 ## Current status
 
-Phase 1 (Data Foundation) is nearly done: the Supabase schema is provisioned with PostGIS, and the pipeline repo is scaffolded. The live next step upstream is pipeline step 1.4 (writing the seed/sync/enrich jobs). This app repo itself is pre-2.1 — still the default `create-next-app` scaffold, nothing built yet.
+Phase 1 (Data Foundation) is nearly done: the Supabase schema is provisioned with PostGIS, and the pipeline repo is scaffolded. The live next step upstream is pipeline step 1.4 (writing the seed/sync/enrich jobs). In this app repo: the map home (`/`), the admin views (`/admin`), and store detail pages (`/stores/[slug]`: SSG + daily ISR, `BookStore` JSON-LD, sitemap at `/sitemap.xml`) are built. `/about` is built (method, sources, verification, how to help, who built it); its "Store data last synced" line (also in the home sidebar) reads the pipeline repo's last successful `sync_osm.yml` GitHub Actions run via `lib/freshness.ts`, cached 6h, with optional `GITHUB_TOKEN`. `/submit` is a stub form that reads `?store=&id=&name=` from the store page's "Suggest a correction" link but doesn't submit yet; the insert waits on the `submissions` columns being documented.
 
 ## Stack
 
@@ -54,7 +54,7 @@ Load the full dataset from `stores_geojson` **once** on mount, via a Next.js API
 
 Visual language and copy tone should match [`indie-books-atlas.html`](./indie-books-atlas.html) — the dark warm palette (moss green `#7c9a55`, amber `#d49a4a`, deep ink background), Playfair Display for display type, Jost for body, IBM Plex Mono for labels/metadata.
 
-For layout and editorial feel, take inspiration from [archaeological-greece.vercel.app](https://archaeological-greece.vercel.app/) — a map-atlas site with a warm, muted, card-based editorial style (serif display headers, mono accents, generous whitespace, a "field guide" rather than "directory" feel). Adapt the *structure and mood*, not the palette — Indie Books Atlas keeps its own moss/amber identity, not the Greek site's parchment/sepia/aegean colors.
+For layout and editorial feel, take inspiration from [archaeological-greece.vercel.app](https://archaeological-greece.vercel.app/) — a map-atlas site with a warm, muted, card-based editorial style (serif display headers, mono accents, generous whitespace, a "field guide" rather than "directory" feel). Adapt the _structure and mood_, not the palette — Indie Books Atlas keeps its own moss/amber identity, not the Greek site's parchment/sepia/aegean colors.
 
 ## Keeping this file current
 

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import DataFreshness from '@/components/layout/DataFreshness';
 import type { StoreFeatureCollection } from '@/lib/types';
 
 const PROVINCES = [
@@ -31,9 +33,10 @@ const SPECIALTIES = [
 
 interface BrowseSidebarProps {
   initialData: StoreFeatureCollection;
+  lastSyncedAt: string | null;
 }
 
-export default function BrowseSidebar({ initialData }: BrowseSidebarProps) {
+export default function BrowseSidebar({ initialData, lastSyncedAt }: BrowseSidebarProps) {
   const storeCount = initialData.features.length;
 
   return (
@@ -124,12 +127,20 @@ export default function BrowseSidebar({ initialData }: BrowseSidebarProps) {
           Under the hood
         </h3>
         <p className="mt-3 text-xs leading-relaxed text-ink-faint">
-          A Python pipeline pulls from OpenStreetMap, CIBA, and WikiData. It
-          then diffs against what&apos;s already stored, enriches from store
-          websites from Google Places data, and writes to Supabase Postgres with
-          PostGIS. Every record carries a completeness score. The map queries it
-          live.
+          A Python pipeline pulls stores from OpenStreetMap, CIBA, and
+          Wikidata, with ALQ coming for Quebec. It diffs against what&apos;s
+          already stored every week, refreshes hours and phone numbers from
+          Google Places monthly, and writes to Supabase Postgres with PostGIS.
+          Every record carries a completeness score, and a person verifies each
+          store before it appears. The map queries it live.
         </p>
+        <DataFreshness syncedAt={lastSyncedAt} className="mt-4" />
+        <Link
+          href="/about"
+          className="mt-4 inline-block font-mono text-xs uppercase tracking-widest text-amber hover:underline"
+        >
+          How this works →
+        </Link>
       </div>
     </aside>
   );

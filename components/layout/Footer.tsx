@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const YEAR = new Date().getFullYear();
 
 export default function Footer() {
@@ -8,6 +10,18 @@ export default function Footer() {
           © {YEAR} Indie Books Atlas
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link
+            href="/about"
+            className="font-mono text-xs uppercase tracking-widest text-amber hover:underline"
+          >
+            About
+          </Link>
+          <Link
+            href="/submit"
+            className="font-mono text-xs uppercase tracking-widest text-amber hover:underline"
+          >
+            Suggest a store
+          </Link>
           <a
             href="https://github.com/SlightlyLostDave/indie-books-atlas-pipeline"
             target="_blank"
