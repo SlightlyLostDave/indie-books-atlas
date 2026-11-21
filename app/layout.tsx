@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Jost, IBM_Plex_Mono, Cinzel } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -48,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${jost.variable} ${plexMono.variable} ${cinzel.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", playfair.variable, jost.variable, plexMono.variable, cinzel.variable)}
       suppressHydrationWarning
     >
       <head>

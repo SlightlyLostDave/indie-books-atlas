@@ -32,7 +32,7 @@ Env vars (not yet configured in this repo - wiring is a Phase 2 step):
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_MAPBOX_TOKEN=
 RESEND_API_KEY=
 ```

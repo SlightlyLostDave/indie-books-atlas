@@ -40,4 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-indie-books-atlas.html
+docs/indie-books-atlas.html
+docs/brand-guide.html
