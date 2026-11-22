@@ -9,7 +9,7 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -40,6 +40,7 @@ function NameCell({ store }: { store: AdminStoreRow }) {
     <div className="min-w-0">
       <Link
         href={`/admin/stores/${store.slug}`}
+        data-row-link
         className="font-medium text-ink no-underline decoration-line-strong underline-offset-[3px] transition-colors duration-(--dur-quick) hover:text-moss hover:underline"
       >
         {store.name}
@@ -99,13 +100,6 @@ const columns: ColumnDef<AdminStoreRow>[] = [
   },
 ];
 
-/**
- * Supabase returns at most 1,000 rows per request by default, and the list
- * query doesn't page, so a list this long is cut off. Said on the page
- * rather than shown as if complete.
- */
-const ROW_LIMIT = 1000;
-
 /** Columns folded into the name cell under 768px, so the table fits a phone without sideways scrolling. */
 const WIDE_ONLY = new Set(["city", "source"]);
 
@@ -117,8 +111,76 @@ const SORT_WORDS: Record<string, [asc: string, desc: string]> = {
   source: ["source, A to Z", "source, Z to A"],
 };
 
+/** Typing in a field (or a menu that takes keys) owns the keyboard. */
+function isTyping(el: Element | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.getAttribute("role") === "combobox";
+}
+
+/**
+ * Keyboard row navigation. Moves real focus between the rows' name links,
+ * so Enter opens a store natively and screen readers announce the row.
+ * j / k always move; the arrow keys move only once a row has focus, so
+ * they keep scrolling the page otherwise. / jumps to the search box and Esc
+ * leaves the rows. Off while typing, with a modifier held, or with a dialog
+ * open. Rows are read from the DOM, so the order follows the current sort.
+ */
+function useRowKeys(body: React.RefObject<HTMLTableSectionElement | null>) {
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTyping(document.activeElement)) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+
+      if (e.key === "/") {
+        const search = document.getElementById("stores-search");
+        if (search instanceof HTMLInputElement) {
+          e.preventDefault();
+          search.focus();
+          search.select();
+        }
+        return;
+      }
+
+      const links = Array.from(body.current?.querySelectorAll<HTMLAnchorElement>("a[data-row-link]") ?? []);
+      if (links.length === 0) return;
+      const current = links.indexOf(document.activeElement as HTMLAnchorElement);
+      const onRow = current >= 0;
+
+      let next: number;
+      if (e.key === "j" || (onRow && e.key === "ArrowDown")) {
+        next = onRow ? Math.min(current + 1, links.length - 1) : 0;
+      } else if (e.key === "k" || (onRow && e.key === "ArrowUp")) {
+        next = onRow ? Math.max(current - 1, 0) : 0;
+      } else if (onRow && e.key === "Escape") {
+        links[current].blur();
+        return;
+      } else {
+        return;
+      }
+
+      e.preventDefault();
+      links[next].focus({ preventScroll: true });
+      links[next].closest("tr")?.scrollIntoView({ block: "nearest" });
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [body]);
+}
+
+function Key({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex h-4 min-w-4 items-center justify-center border border-line-strong px-1 font-mono text-label text-ink-dim">
+      {children}
+    </kbd>
+  );
+}
+
 export function StoresTable({ data }: { data: AdminStoreRow[] }) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const bodyRef = useRef<HTMLTableSectionElement>(null);
+  useRowKeys(bodyRef);
 
   const table = useReactTable({
     data,
@@ -157,16 +219,23 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
 
   return (
     <DuplicateNames.Provider value={duplicates}>
-      <p aria-live="polite" className="mb-2 text-ui text-ink-dim">
-        <span className="font-mono text-ink tabular-nums">{figure(data.length)}</span>{" "}
-        {data.length === 1 ? "store" : "stores"} · {sortWords ? `Sorted by ${sortWords}` : "In name order"}
-      </p>
-      {data.length >= ROW_LIMIT && (
-        <p className="mb-2 font-display text-ui text-ink-dim italic">
-          The list stops at {figure(ROW_LIMIT)} rows, so some stores aren&apos;t shown. Search or filter to reach
-          them.
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <p aria-live="polite" className="text-ui text-ink-dim">
+          <span className="font-mono text-ink tabular-nums">{figure(data.length)}</span>{" "}
+          {data.length === 1 ? "store" : "stores"} · {sortWords ? `Sorted by ${sortWords}` : "In name order"}
         </p>
-      )}
+        <p className="hidden items-center gap-1.5 text-meta text-ink-faint md:flex">
+          <Key>j</Key>
+          <Key>k</Key>
+          <span>move</span>
+          <span aria-hidden="true">·</span>
+          <Key>Enter</Key>
+          <span>opens</span>
+          <span aria-hidden="true">·</span>
+          <Key>/</Key>
+          <span>search</span>
+        </p>
+      </div>
       <Table containerClassName="overflow-x-visible" className="border-separate border-spacing-0">
         <TableHeader className="[&_tr]:border-0">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -180,6 +249,7 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
                     aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : canSort ? "none" : undefined}
                     className={cn(
                       "sticky top-(--admin-sticky-top) z-10 border-b-2 border-ink bg-bg px-0 pt-3 pb-1",
+                      header.column.id === "name" && "border-l-2 border-l-transparent",
                       WIDE_ONLY.has(header.column.id) && "hidden md:table-cell",
                     )}
                   >
@@ -210,15 +280,20 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
             </TableRow>
           ))}
         </TableHeader>
-        <TableBody>
+        <TableBody ref={bodyRef}>
           {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id} className="border-0">
+            <TableRow
+              key={row.id}
+              className="group/row border-0 scroll-mt-[calc(var(--admin-sticky-top)+2.75rem)] has-[a[data-row-link]:focus-visible]:bg-bg-step"
+            >
               {row.getVisibleCells().map((cell) => (
                 <TableCell
                   key={cell.id}
                   className={cn(
                     "border-b border-line align-top",
-                    cell.column.id === "name" && "w-[40%] whitespace-normal",
+                    // The current-row rule (DESIGN.md, Focus and states): moss on the leading edge.
+                    cell.column.id === "name" &&
+                      "w-[40%] border-l-2 border-l-transparent whitespace-normal group-has-[a[data-row-link]:focus-visible]/row:border-l-moss",
                     WIDE_ONLY.has(cell.column.id) && "hidden md:table-cell",
                   )}
                 >

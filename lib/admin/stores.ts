@@ -17,6 +17,14 @@ const STORE_COLUMNS = `
 `;
 
 /**
+ * PostgREST caps a single response at 1,000 rows by default (Supabase's
+ * "Max rows" setting), which silently cut the catalogue off at 1,000 of
+ * 1,072. The list is read in pages of this size until a page comes back
+ * empty.
+ */
+const LIST_PAGE_SIZE = 1000;
+
+/**
  * Reads deliberately do NOT swallow errors into an empty-state fallback the
  * way `lib/stores.ts`'s public `getStoresGeoJSON()` does. An admin silently
  * seeing "0 stores" because a query failed is misleading for a triage tool
@@ -28,45 +36,63 @@ export async function getStoresList(
   await requireAdminAction();
   const supabase = createAdminClient();
 
-  let query = supabase.from("stores").select(STORE_COLUMNS);
-
-  if (!filters.includeDeleted) {
-    query = query.eq("is_deleted", false);
-  }
-  if (filters.search) {
-    query = query.or(
-      `name.ilike.%${filters.search}%,city.ilike.%${filters.search}%`,
-    );
-  }
-  if (filters.province) {
-    query = query.eq("province", filters.province);
-  }
-  if (filters.specialty) {
-    query = query.contains("specialties", [filters.specialty]);
-  }
-  if (filters.verified === "verified") {
-    query = query.eq("is_verified", true);
-  } else if (filters.verified === "unverified") {
-    query = query.eq("is_verified", false);
-  }
-  if (filters.needsReview) {
-    query = query.eq("needs_review", true);
-  }
-  if (typeof filters.maxQualityScore === "number") {
-    query = query.lte("data_quality_score", filters.maxQualityScore);
-  }
-
   const sortBy = filters.sortBy ?? "name";
   const sortDirection = filters.sortDirection ?? "asc";
-  query = query.order(sortBy, { ascending: sortDirection === "asc" });
 
-  const { data, error } = await query;
+  // Rebuilt per page: a query builder runs once when awaited.
+  function buildQuery() {
+    let query = supabase.from("stores").select(STORE_COLUMNS);
 
-  if (error) {
-    throw new Error(`Failed to load stores list: ${error.message}`);
+    if (!filters.includeDeleted) {
+      query = query.eq("is_deleted", false);
+    }
+    if (filters.search) {
+      query = query.or(
+        `name.ilike.%${filters.search}%,city.ilike.%${filters.search}%`,
+      );
+    }
+    if (filters.province) {
+      query = query.eq("province", filters.province);
+    }
+    if (filters.specialty) {
+      query = query.contains("specialties", [filters.specialty]);
+    }
+    if (filters.verified === "verified") {
+      query = query.eq("is_verified", true);
+    } else if (filters.verified === "unverified") {
+      query = query.eq("is_verified", false);
+    }
+    if (filters.needsReview) {
+      query = query.eq("needs_review", true);
+    }
+    if (typeof filters.maxQualityScore === "number") {
+      query = query.lte("data_quality_score", filters.maxQualityScore);
+    }
+
+    // `id` breaks ties, so the order is total and pages neither overlap nor
+    // skip rows when many stores share a name or a score.
+    return query
+      .order(sortBy, { ascending: sortDirection === "asc" })
+      .order("id", { ascending: true });
   }
 
-  return (data ?? []) as unknown as AdminStoreRow[];
+  // Advance by what actually came back and stop on an empty page, so a
+  // max-rows setting below LIST_PAGE_SIZE can't end the list early.
+  const rows: AdminStoreRow[] = [];
+  for (;;) {
+    const from = rows.length;
+    const { data, error } = await buildQuery().range(from, from + LIST_PAGE_SIZE - 1);
+
+    if (error) {
+      throw new Error(`Failed to load stores list: ${error.message}`);
+    }
+
+    const page = (data ?? []) as unknown as AdminStoreRow[];
+    if (page.length === 0) break;
+    rows.push(...page);
+  }
+
+  return rows;
 }
 
 export async function getStoreBySlug(
@@ -196,6 +222,18 @@ export async function setPermanentlyClosed(
   await requireAdminAction();
   const supabase = createAdminClient();
   const before = await getStoreOrThrow(slug);
+
+  // `is_permanently_closed` is immutable once set (SUPABASE_SCHEMA.md). The
+  // rule lives in application code only, with no DB trigger, so every writer
+  // has to keep it: the admin can set the flag but never clear it.
+  if (before.is_permanently_closed && !value) {
+    throw new Error(
+      "This store is marked permanently closed, and that flag can't be unset once set.",
+    );
+  }
+  if (before.is_permanently_closed === value) {
+    return;
+  }
 
   const { error } = await supabase
     .from("stores")

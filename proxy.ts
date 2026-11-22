@@ -13,7 +13,11 @@ export const proxy = clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\.(?:html?|css|js|jsx|ts|tsx|json|ico|svg|png|jpg|jpeg|webp|gif|woff2?|ttf|map)).*)",
+    // Skip Next internals and static files. The backslash is doubled so the
+    // regex gets a literal "\." (a file extension). With a single backslash
+    // the dot matches any character, and every path containing "ts", "js",
+    // "ico", "map" and so on (e.g. /admin/events) skipped this proxy.
+    "/((?!_next|[^?]*\\.(?:html?|css|js|jsx|ts|tsx|json|ico|svg|png|jpg|jpeg|webp|gif|woff2?|ttf|map)).*)",
     "/(api|trpc)(.*)",
   ],
 };

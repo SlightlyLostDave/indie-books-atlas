@@ -152,6 +152,17 @@ export function StoresFilterBar() {
             placeholder="Search by name or city"
             defaultValue={search}
             onChange={(e) => setParam("search", e.target.value)}
+            onKeyDown={(e) => {
+              // Esc clears the search; on an empty box it hands the keys back to the rows.
+              if (e.key !== "Escape") return;
+              if (e.currentTarget.value) {
+                e.preventDefault();
+                e.currentTarget.value = "";
+                setParam("search", "");
+              } else {
+                e.currentTarget.blur();
+              }
+            }}
           />
         </div>
         <Segmented

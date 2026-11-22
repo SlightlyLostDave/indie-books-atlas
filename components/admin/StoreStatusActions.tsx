@@ -194,35 +194,15 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
             {store.is_permanently_closed ? (
               <>
                 <StatusMark status="closed" className="gap-1.5 text-ui font-medium" />
-                <p className="text-meta text-ink-dim">The public page says this store has closed.</p>
-                <ConfirmAction
-                  trigger="Unmark closed…"
-                  title={`Unmark ${store.name} as closed?`}
-                  description={
-                    <>
-                      <p>Its public page will stop saying it has closed.</p>
-                      <p>
-                        The pipeline&apos;s schema treats this flag as permanent once set, so unmark only to correct a
-                        mistake.
-                      </p>
-                    </>
-                  }
-                  confirm="Unmark closed"
-                  destructive={false}
-                  disabled={isPending}
-                  onConfirm={() =>
-                    run(
-                      () => setPermanentlyClosedAction(store.slug, { value: false }),
-                      { title: "No longer marked closed" },
-                      "Couldn't change the closed flag",
-                    )
-                  }
-                />
+                <p className="text-meta text-ink-dim">
+                  The public page says this store has closed. The flag is permanent, so it can&apos;t be unset here.
+                </p>
               </>
             ) : (
               <>
                 <p className="text-meta text-ink-dim">
-                  For a store that has shut for good. Its page says so and the listing stays up as a record.
+                  For a store that has shut for good. Its page says so and the listing stays up as a record. This
+                  can&apos;t be undone.
                 </p>
                 <ConfirmAction
                   trigger="Mark permanently closed…"
@@ -230,10 +210,8 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                   description={
                     <>
                       <p>Its public page will say it has closed. The listing stays up as a record.</p>
-                      <p>
-                        Treat this as permanent. The pipeline never sets or clears this flag, and its schema says it
-                        isn&apos;t unset once on.
-                      </p>
+                      <p className="font-medium text-ink">This can&apos;t be undone from the admin.</p>
+                      <p>The flag is permanent once set. Only the database itself could clear it.</p>
                     </>
                   }
                   confirm="Mark permanently closed"
