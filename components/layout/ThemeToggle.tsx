@@ -1,18 +1,34 @@
 'use client';
 
-import { setTheme, useTheme } from '@/lib/useTheme';
+import { setTheme, useTheme, type Theme } from '@/lib/useTheme';
+import { cn } from '@/lib/utils';
 
-export default function ThemeToggle() {
+const OPTIONS: { value: Theme; label: string }[] = [
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+];
+
+/** A square Dark / Light segmented control (DESIGN.md, Shape). */
+export default function ThemeToggle({ className }: { className?: string }) {
   const theme = useTheme();
 
   return (
-    <button
-      type="button"
-      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-      aria-label="Toggle light and dark mode"
-      className="font-mono text-xs uppercase tracking-widest text-ink-dim hover:text-amber transition-colors"
+    <div
+      role="group"
+      aria-label="Colour theme"
+      className={cn('inline-flex shrink-0 border border-line-strong bg-bg-raised', className)}
     >
-      {theme === 'light' ? 'Dark mode' : 'Light mode'}
-    </button>
+      {OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          aria-pressed={theme === option.value}
+          onClick={() => setTheme(option.value)}
+          className="h-6.5 px-2.5 font-sans text-meta font-medium text-ink-dim transition-colors duration-(--dur-quick) hover:text-ink focus-visible:-outline-offset-2 aria-pressed:bg-ink aria-pressed:text-bg"
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   );
 }

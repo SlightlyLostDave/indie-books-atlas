@@ -35,14 +35,16 @@
   --secondary-foreground: var(--ink);
   --muted: var(--bg-step);
   --muted-foreground: var(--ink-dim);
-  --accent: var(--amber);
-  --accent-foreground: var(--bg);
+  /* accent is a quiet highlight (menus, list focus), not the amber: amber is
+     spent once per layout (DESIGN.md, principle 4). */
+  --accent: var(--bg-step);
+  --accent-foreground: var(--ink);
   --destructive: var(--danger);
   --destructive-foreground: var(--ink);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--amber-line);
-  --radius: 0.625rem;
+  --ring: var(--moss);
+  --radius: 0;
   --sidebar: var(--bg-raised);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--moss);
@@ -50,7 +52,78 @@
   --sidebar-accent: var(--bg-step);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: var(--amber-line);
+  --sidebar-ring: var(--moss);
+
+  /* ---- Design system tokens (docs/design/DESIGN.md). No new hues. ---- */
+  --scrim: color-mix(in srgb, var(--bg) 82%, transparent);
+
+  /* Type sizes, comfortable density */
+  --fs-label: 0.6875rem;
+  --fs-meta: 0.78125rem;
+  --fs-ui: 0.875rem;
+  --fs-body: 1rem;
+  --fs-prose: 1.0625rem;
+  --fs-lede: 1.25rem;
+  --fs-heading: 1.5rem;
+  --fs-title: 1.875rem;
+  --fs-page: clamp(2.375rem, 1.55rem + 2.6vw, 3.375rem);
+
+  /* Spacing roles, comfortable density */
+  --control-h: 2.25rem;
+  --control-h-sm: 1.875rem;
+  --control-px: 0.875rem;
+  --field-px: 0.625rem;
+  --row-y: 0.625rem;
+  --gap-stack: 0.75rem;
+  --gap-block: 1.5rem;
+  --gap-section: 4rem;
+  --gutter: 2rem;
+
+  /* Motion */
+  --dur-quick: 120ms;
+  --dur-move: 200ms;
+  --ease-plate: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Plate frame (home): outer neatline inset, margin band, foot band */
+  --plate-inset: 10px;
+  --plate-band: 14px;
+  --plate-foot: 30px;
+  --plate-o: calc(var(--plate-inset) + var(--plate-band));
+  --plate-o-foot: calc(var(--plate-inset) + var(--plate-foot));
+  --panel-w: 24rem;
+  --sheet-peek: 9.5rem;
+}
+
+@media (max-width: 767.98px) {
+  :root {
+    --gutter: 1.125rem;
+    --plate-inset: 6px;
+    --plate-band: 0px;
+    --plate-foot: 0px;
+  }
+}
+
+/* Compact density: the admin's setting of the same system. Same families,
+   colours, rules and radius; tighter type and spacing. */
+[data-density="compact"] {
+  --fs-meta: 0.75rem;
+  --fs-ui: 0.8125rem;
+  --fs-body: 0.875rem;
+  --fs-prose: 0.9375rem;
+  --fs-lede: 1.0625rem;
+  --fs-heading: 1.25rem;
+  --fs-title: 1.625rem;
+  --fs-page: 2.125rem;
+
+  --control-h: 1.875rem;
+  --control-h-sm: 1.625rem;
+  --control-px: 0.625rem;
+  --field-px: 0.5rem;
+  --row-y: 0.375rem;
+  --gap-stack: 0.5rem;
+  --gap-block: 1rem;
+  --gap-section: 2rem;
+  --gutter: 1.5rem;
 }
 
 :root.light {
@@ -73,6 +146,7 @@
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
+  --color-bg: var(--bg);
   --color-bg-raised: var(--bg-raised);
   --color-bg-step: var(--bg-step);
   --color-ink: var(--ink);
@@ -115,22 +189,53 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-scrim: var(--scrim);
+
+  /* Radius is 0 for every UI element (DESIGN.md, Shape). The scale is kept
+     so existing rounded-* utilities resolve to square. */
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+
+  /* Type scale (DESIGN.md, Type). Backed by --fs-* so density can retune it. */
+  --text-label: var(--fs-label);
+  --text-label--line-height: 1.2;
+  --text-meta: var(--fs-meta);
+  --text-meta--line-height: 1.45;
+  --text-ui: var(--fs-ui);
+  --text-ui--line-height: 1.45;
+  --text-body: var(--fs-body);
+  --text-body--line-height: 1.55;
+  --text-prose: var(--fs-prose);
+  --text-prose--line-height: 1.65;
+  --text-lede: var(--fs-lede);
+  --text-lede--line-height: 1.5;
+  --text-heading: var(--fs-heading);
+  --text-heading--line-height: 1.2;
+  --text-title: var(--fs-title);
+  --text-title--line-height: 1.1;
+  --text-page: var(--fs-page);
+  --text-page--line-height: 1.04;
+
+}
+
+/* Elevation is flat (DESIGN.md, Elevation; BRIEF 2.4): no shadow or blur
+   tokens exist, so shadow-* and blur-* utilities generate nothing. */
+@theme {
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
 }
 
 body {
-  background: radial-gradient(
-      ellipse at top,
-      rgba(124, 154, 85, 0.08),
-      transparent 60%
-    ),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
 }
@@ -157,18 +262,59 @@ body {
   position: absolute;
   inset: 0;
   transform-origin: left center;
-  background: linear-gradient(90deg, transparent, var(--amber), var(--moss), transparent);
+  background: var(--moss);
   animation: loading-bar-sweep 1.6s ease-in-out infinite;
+}
+
+/* Home bottom sheet heights (components/layout/MapPanel.tsx). Mobile only:
+   md:h-auto overrides them on desktop. */
+[data-sheet="peek"] {
+  --sheet-h: var(--sheet-peek);
+}
+[data-sheet="half"] {
+  --sheet-h: 52dvh;
+}
+[data-sheet="full"] {
+  --sheet-h: calc(100dvh - 4.5rem);
+}
+
+/* LoadingIcon: a segment tracing the neatline (components/ui/icons.tsx). */
+@keyframes iba-trace {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.iba-trace {
+  animation: iba-trace 1.2s linear infinite;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

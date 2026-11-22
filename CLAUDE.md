@@ -52,9 +52,7 @@ Load the full dataset from `stores_geojson` **once** on mount, via a Next.js API
 
 ## Design direction
 
-Visual language and copy tone should match [`indie-books-atlas.html`](./indie-books-atlas.html) — the dark warm palette (moss green `#7c9a55`, amber `#d49a4a`, deep ink background), Playfair Display for display type, Jost for body, IBM Plex Mono for labels/metadata.
-
-For layout and editorial feel, take inspiration from [archaeological-greece.vercel.app](https://archaeological-greece.vercel.app/) — a map-atlas site with a warm, muted, card-based editorial style (serif display headers, mono accents, generous whitespace, a "field guide" rather than "directory" feel). Adapt the _structure and mood_, not the palette — Indie Books Atlas keeps its own moss/amber identity, not the Greek site's parchment/sepia/aegean colors.
+Visual language follows **[docs/design/DESIGN.md](docs/design/DESIGN.md)** (Direction A, "Plate": the printed atlas). It is the contract for UI work: tokens, type roles, density, shape, motion, and a do/don't list. The palette (moss `#7c9a55`, amber `#d49a4a`, deep ink) and the three families (Playfair Display for names and marginal italics, Jost for reading and UI, IBM Plex Mono for figures only) are locked; see `docs/design/BRIEF.md`. The admin uses the same system at `data-density="compact"`. archaeological-greece.vercel.app remains mood input for structure only, not palette or layout.
 
 ## Keeping this file current
 

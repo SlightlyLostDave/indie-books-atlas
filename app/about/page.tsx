@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import DataFreshness from "@/components/layout/DataFreshness";
-import Footer from "@/components/layout/Footer";
-import ThemeToggle from "@/components/layout/ThemeToggle";
+import PageShell from "@/components/layout/PageShell";
 import { getLastSyncedAt } from "@/lib/freshness";
 import { getStoreSlugs } from "@/lib/stores";
 
@@ -69,18 +68,11 @@ export default async function AboutPage() {
   const storeCount = slugs.length;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-5">
-        <Link href="/" className={monoLinkClass}>
-          ← Back to the atlas
-        </Link>
-        <ThemeToggle />
-      </header>
-
+    <PageShell crumbs={[{ label: "About the atlas" }]}>
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         {/* Hero */}
         <header>
-          <p className="font-eyebrow text-sm uppercase tracking-[0.2em] text-moss">About the atlas</p>
+          <p className="font-display text-prose italic text-ink-dim">About the atlas</p>
           <h1 className="mt-2 font-display text-4xl font-bold text-ink sm:text-5xl">
             A field guide to Canada&apos;s independent bookstores
           </h1>
@@ -326,8 +318,6 @@ export default async function AboutPage() {
           available under the ODbL.
         </p>
       </main>
-
-      <Footer />
-    </div>
+    </PageShell>
   );
 }

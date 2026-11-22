@@ -40,7 +40,8 @@ export default function BrowseSidebar({ initialData, lastSyncedAt }: BrowseSideb
   const storeCount = initialData.features.length;
 
   return (
-    <aside className="hidden md:block md:w-95 md:shrink-0 md:overflow-y-auto md:border-l md:border-line md:bg-bg-raised md:p-6">
+    // The panel container (desktop column / mobile sheet) is MapPanel.
+    <div>
       <h2 className="font-display text-xl font-semibold text-ink">
         Every independent bookstore in Canada. Eventually.
       </h2>
@@ -142,6 +143,6 @@ export default function BrowseSidebar({ initialData, lastSyncedAt }: BrowseSideb
           How this works →
         </Link>
       </div>
-    </aside>
+    </div>
   );
 }

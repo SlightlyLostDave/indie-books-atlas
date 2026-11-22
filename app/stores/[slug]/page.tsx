@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Footer from "@/components/layout/Footer";
-import ThemeToggle from "@/components/layout/ThemeToggle";
+import PageShell, { type Crumb } from "@/components/layout/PageShell";
 import StoreLocationMap from "@/components/store/StoreLocationMap";
 import { displayUrl, formatPhone, provinceName } from "@/lib/format";
 import { formatHoursRows } from "@/lib/hours";
@@ -93,6 +92,11 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
   const osmEditUrl = hasCoords
     ? `https://www.openstreetmap.org/edit#map=19/${store.lat}/${store.lng}`
     : "https://www.openstreetmap.org/";
+  const crumbs: Crumb[] = [
+    { label: provinceName(store.province) ?? "Unplaced" },
+    ...(store.city ? [{ label: store.city }] : []),
+    { label: store.name },
+  ];
   const correctionUrl = `/submit?${new URLSearchParams({
     store: store.slug,
     id: String(store.id),
@@ -100,24 +104,17 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
   })}`;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <PageShell crumbs={crumbs}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-5">
-        <Link href="/" className={monoLinkClass}>
-          ← Back to the atlas
-        </Link>
-        <ThemeToggle />
-      </header>
-
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
         <article>
           <header>
             {place && (
-              <p className="font-eyebrow text-sm uppercase tracking-[0.2em] text-moss">{place}</p>
+              <p className="font-display text-prose italic text-ink-dim">{place}</p>
             )}
             <h1 className="mt-2 font-display text-4xl font-bold text-ink sm:text-5xl">
               {store.name}
@@ -272,8 +269,6 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
           </aside>
         </article>
       </main>
-
-      <Footer />
-    </div>
+    </PageShell>
   );
 }

@@ -1,44 +1,52 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
+import { CheckIcon, CloseIcon, FlagMark, InfoMark, LoadingIcon } from "@/components/ui/icons"
+import { useTheme } from "@/lib/useTheme"
+
+/*
+ * Toasts as marginal notes: a square neatline on bg-raised, the status as
+ * glyph plus colour, and a top rule in danger for errors. Unstyled, so sonner
+ * contributes positioning and motion only. The theme comes from the app's
+ * own theme store (lib/useTheme), not next-themes, which this app never mounts.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const theme = useTheme()
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
       icons={{
-        success: (
-          <CircleCheckIcon className="size-4" />
-        ),
-        info: (
-          <InfoIcon className="size-4" />
-        ),
-        warning: (
-          <TriangleAlertIcon className="size-4" />
-        ),
-        error: (
-          <OctagonXIcon className="size-4" />
-        ),
-        loading: (
-          <Loader2Icon className="size-4 animate-spin" />
-        ),
+        success: <CheckIcon className="size-4 text-moss" />,
+        info: <InfoMark className="size-4 text-ink-dim" />,
+        warning: <FlagMark className="size-4 text-amber" />,
+        error: <CloseIcon className="size-4 text-danger" />,
+        loading: <LoadingIcon className="size-4 text-moss" />,
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--border-radius": "0px",
         } as React.CSSProperties
       }
       toastOptions={{
+        unstyled: true,
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "cn-toast flex w-(--width) items-start gap-3 rounded-none border border-ink-faint bg-bg-raised px-4 py-3 font-sans text-ui text-ink",
+          icon: "mt-0.5 flex size-4 shrink-0 items-center justify-center",
+          content: "flex min-w-0 flex-1 flex-col gap-0.5",
+          title: "font-medium text-ink",
+          description: "text-meta text-ink-dim",
+          error: "border-t-3 border-t-danger",
+          warning: "border-t-3 border-t-amber",
+          actionButton:
+            "ml-auto h-(--control-h-sm) shrink-0 rounded-none border border-moss bg-moss px-2.5 text-ui font-medium text-bg hover:bg-moss-deep",
+          cancelButton:
+            "h-(--control-h-sm) shrink-0 rounded-none border border-line-strong bg-transparent px-2.5 text-ui text-ink hover:border-moss",
+          closeButton:
+            "absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-none border-0 bg-transparent text-ink-dim hover:text-ink",
         },
       }}
       {...props}

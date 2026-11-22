@@ -6,7 +6,6 @@ import { specialtyLabel } from "@/lib/specialties";
 
 interface StoreSidebarProps {
   store: StoreFeatureProperties | null;
-  onClose: () => void;
 }
 
 function normalizeSpecialties(specialties: unknown): string[] {
@@ -33,33 +32,17 @@ function StubRow({ label }: { label: string }) {
   );
 }
 
-export default function StoreSidebar({ store, onClose }: StoreSidebarProps) {
+export default function StoreSidebar({ store }: StoreSidebarProps) {
   if (!store) return null;
   const specialties = normalizeSpecialties(store.specialties);
 
+  // The panel container, and "Back to the index", belong to MapPanel.
   return (
-    <aside
-      className="
-        fixed inset-x-0 bottom-0 z-20 max-h-[70vh] overflow-y-auto rounded-t-lg border-t border-line bg-bg-raised p-6
-        shadow-2xl
-        md:static md:inset-auto md:z-auto md:h-full md:w-[380px] md:max-h-none md:flex-shrink-0
-        md:rounded-none md:rounded-l-md md:border-l md:border-t-0 md:shadow-none
-      "
-    >
+    <article>
       <div>
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="font-display text-2xl font-semibold text-ink">
-            {store.name}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close store details"
-            className="shrink-0 rounded-full border border-line px-2 py-1 font-mono text-xs text-amber transition-colors hover:border-amber-line hover:bg-bg-step"
-          >
-            ✕
-          </button>
-        </div>
+        <h2 className="font-display text-2xl font-semibold text-ink">
+          {store.name}
+        </h2>
 
         <p className="mt-1 font-mono text-xs uppercase tracking-widest text-ink-dim">
           {[store.city, store.province].filter(Boolean).join(", ") || "Location unknown"}
@@ -96,6 +79,6 @@ export default function StoreSidebar({ store, onClose }: StoreSidebarProps) {
           View full profile →
         </Link>
       </div>
-    </aside>
+    </article>
   );
 }

@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import Footer from "@/components/layout/Footer";
-import ThemeToggle from "@/components/layout/ThemeToggle";
+import PageShell, { type Crumb } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -43,21 +41,17 @@ const selectClass =
 
 export default async function SubmitPage({ searchParams }: PageProps<"/submit">) {
   const store = readStoreContext(await searchParams);
+  const crumbs: Crumb[] = store
+    ? [
+        { label: store.name, href: `/stores/${encodeURIComponent(store.slug)}` },
+        { label: "Suggest a correction" },
+      ]
+    : [{ label: "Suggest a correction or a store" }];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-5">
-        <Link
-          href={store ? `/stores/${encodeURIComponent(store.slug)}` : "/"}
-          className="font-mono text-xs uppercase tracking-widest text-amber hover:underline"
-        >
-          {store ? `← Back to ${store.name}` : "← Back to the atlas"}
-        </Link>
-        <ThemeToggle />
-      </header>
-
+    <PageShell crumbs={crumbs}>
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
-        <p className="font-eyebrow text-sm uppercase tracking-[0.2em] text-moss">Contribute</p>
+        <p className="font-display text-prose italic text-ink-dim">Contribute</p>
         <h1 className="mt-2 font-display text-4xl font-bold text-ink">
           {store ? "Suggest a correction" : "Suggest a correction or a store"}
         </h1>
@@ -146,8 +140,6 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
           </FieldGroup>
         </form>
       </main>
-
-      <Footer />
-    </div>
+    </PageShell>
   );
 }
