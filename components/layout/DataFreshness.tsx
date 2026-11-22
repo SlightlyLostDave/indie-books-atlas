@@ -5,30 +5,31 @@ interface DataFreshnessProps {
   /** Last successful sync, or `null` if it couldn't be loaded. */
   syncedAt: Date | string | null;
   className?: string;
+  /** Render as a `span`, for use inside an edition line. */
+  inline?: boolean;
 }
 
 /**
- * "Store data last synced: <date>". A visible signal that the atlas is
- * actively maintained. Plain (non-async) so client trees can render it too.
+ * "Store data last synced: <date>". A plain sentence with the date set as a
+ * figure (DESIGN.md: no status dot, no tracked caps). Plain (non-async) so
+ * client trees can render it too.
  */
-export default function DataFreshness({ syncedAt, className }: DataFreshnessProps) {
+export default function DataFreshness({ syncedAt, className, inline = false }: DataFreshnessProps) {
   const iso = syncedAt ? new Date(syncedAt).toISOString() : null;
+  const Tag = inline ? "span" : "p";
 
   return (
-    <p
-      className={cn(
-        "flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-dim",
-        className,
-      )}
-    >
-      <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-moss" />
+    <Tag className={cn("text-ink-dim", className)}>
       {iso ? (
-        <span>
-          Store data last synced: <time dateTime={iso}>{formatSyncDate(iso)}</time>
-        </span>
+        <>
+          Store data last synced:{" "}
+          <time dateTime={iso} className="font-mono text-ink tabular-nums">
+            {formatSyncDate(iso)}
+          </time>
+        </>
       ) : (
-        <span>Store data synced weekly from OpenStreetMap</span>
+        "Store data synced weekly from OpenStreetMap"
       )}
-    </p>
+    </Tag>
   );
 }

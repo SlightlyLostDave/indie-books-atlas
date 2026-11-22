@@ -12,21 +12,32 @@ interface StoreLocationMapProps {
   name: string;
 }
 
-/** Small, single-store map for `/stores/[slug]`. */
+function documentTheme(): "light" | "dark" {
+  return document.documentElement.classList.contains("light") ? "light" : "dark";
+}
+
+/**
+ * The store page's location inset: a small street map inside the plate's
+ * double neatline, with the located point in amber (the page's one amber).
+ * No zoom buttons; it pans, and pinch or double-click zooms. Framing and the
+ * caption live on the page.
+ */
 export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const styleRef = useRef<string | null>(null);
   const theme = useTheme();
-  const initialThemeRef = useRef(theme);
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current || !token) return;
     mapboxgl.accessToken = token;
 
+    // The document's theme, not the hydration snapshot (F-MAP-4).
+    styleRef.current = MAP_STYLES[documentTheme()];
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: MAP_STYLES[initialThemeRef.current],
+      style: styleRef.current,
       center: [lng, lat],
       zoom: 15,
       scrollZoom: false,
@@ -34,13 +45,17 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
       pitchWithRotate: false,
     });
     map.touchZoomRotate.disableRotation();
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
-    // DOM marker (not a style layer) so it survives theme `setStyle` swaps.
+    // A DOM marker (not a style layer) so it survives theme `setStyle` swaps.
+    // The single store map is not the main map, so BRIEF 6.3 doesn't apply.
+    // Drawn as a locator: an amber point inside a hairline ring.
     const el = document.createElement("div");
-    el.className = "h-4 w-4 rounded-full border-2 border-[#100e0b] bg-[#d49a4a] shadow-md";
+    el.className = "grid size-7 place-items-center rounded-full border border-amber";
     el.setAttribute("role", "img");
     el.setAttribute("aria-label", name);
+    const dot = document.createElement("span");
+    dot.className = "block size-2.5 rounded-full border-2 border-bg bg-amber box-content";
+    el.appendChild(dot);
     new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
 
     mapRef.current = map;
@@ -52,16 +67,17 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-    map.setStyle(MAP_STYLES[theme]);
+    if (!map || theme !== documentTheme()) return;
+    const style = MAP_STYLES[theme];
+    if (styleRef.current === style) return;
+    styleRef.current = style;
+    map.setStyle(style);
   }, [theme]);
 
   if (!token) {
     return (
-      <div className="flex h-[280px] w-full items-center justify-center rounded-md border border-line bg-bg-step">
-        <span className="font-mono text-xs uppercase tracking-widest text-ink-faint">
-          Map unavailable
-        </span>
+      <div className="flex h-full w-full items-center justify-center bg-bg-step">
+        <span className="font-display text-ui text-ink-faint italic">Map unavailable</span>
       </div>
     );
   }
@@ -69,7 +85,7 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
   return (
     <div
       ref={containerRef}
-      className="h-[280px] w-full overflow-hidden rounded-md border border-line"
+      className="h-full w-full"
       aria-label={`Map showing the location of ${name}`}
     />
   );

@@ -109,3 +109,40 @@ export function toSchemaOpeningHours(hours: HoursParsed | null): string[] {
       `${start === end ? DAY_SCHEMA[start] : `${DAY_SCHEMA[start]}-${DAY_SCHEMA[end]}`} ${value}`,
   );
 }
+
+const DAY_LONG: Record<DayKey, string> = {
+  mo: "Monday",
+  tu: "Tuesday",
+  we: "Wednesday",
+  th: "Thursday",
+  fr: "Friday",
+  sa: "Saturday",
+  su: "Sunday",
+  ph: "Public holidays",
+};
+
+/** `Date#getDay()` (0 = Sunday) → the `hours_parsed` day key. */
+const JS_DAY: Exclude<DayKey, "ph">[] = ["su", "mo", "tu", "we", "th", "fr", "sa"];
+
+export function dayKeyFor(date: Date): Exclude<DayKey, "ph"> {
+  return JS_DAY[date.getDay()];
+}
+
+export interface WeekRow {
+  key: DayKey;
+  label: string;
+  /** Display hours, "Closed", or `null` when the day isn't recorded (unknown, not closed). */
+  hours: string | null;
+}
+
+/**
+ * The full week for an hours table: Monday to Sunday, then public holidays.
+ * Unlike `formatHoursRows`, nothing is grouped or omitted, so an unknown day
+ * stays visible as unknown instead of disappearing.
+ */
+export function formatWeekRows(hours: HoursParsed | null): WeekRow[] {
+  return [...WEEK, "ph" as const].map((key) => {
+    const day = hours?.[key];
+    return { key, label: DAY_LONG[key], hours: day ? describeDay(day) : null };
+  });
+}

@@ -1,133 +1,311 @@
+'use client';
+
+import { useId, useMemo } from 'react';
 import Link from 'next/link';
-import DataFreshness from '@/components/layout/DataFreshness';
-import type { StoreFeatureCollection } from '@/lib/types';
-
-const PROVINCES = [
-  'AB',
-  'BC',
-  'MB',
-  'NB',
-  'NL',
-  'NS',
-  'NT',
-  'NU',
-  'ON',
-  'PE',
-  'QC',
-  'SK',
-  'YT',
-];
-
-const SPECIALTIES = [
-  'Used',
-  'Rare & antiquarian',
-  "Children's",
-  'Francophone',
-  'Indigenous',
-  'LGBTQ+',
-  'Genre fiction',
-  'Academic',
-  'Art & design',
-  'Multilingual',
-];
+import EditionLine from '@/components/layout/EditionLine';
+import { CheckIcon } from '@/components/ui/icons';
+import {
+  PROVINCE_ORDER,
+  UNPLACED,
+  filterFeatures,
+  fold,
+  hasFilters,
+  provinceCounts,
+  specialtiesOf,
+  specialtyCounts,
+  type BrowseFilters,
+} from '@/lib/browse';
+import { provinceName } from '@/lib/format';
+import { specialtyLabel } from '@/lib/specialties';
+import { linkClass } from '@/lib/styles';
+import type { StoreFeature } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface BrowseSidebarProps {
-  initialData: StoreFeatureCollection;
+  /** Every mapped store, as loaded once on mount. */
+  features: StoreFeature[];
+  /** The stores passing the current filters (what the map shows). */
+  filtered: StoreFeature[];
+  filters: BrowseFilters;
+  onFiltersChange: (filters: BrowseFilters) => void;
+  onSelectStore: (slug: string) => void;
   lastSyncedAt: string | null;
 }
 
-export default function BrowseSidebar({ initialData, lastSyncedAt }: BrowseSidebarProps) {
-  const storeCount = initialData.features.length;
+/** How many name matches to list under "Find" before deferring to the map. */
+const MAX_MATCHES = 8;
+
+const sectionHead = 'font-display text-prose font-semibold text-ink';
+const note = 'text-meta text-ink-faint';
+
+/** One gazetteer line: a control, the name, dot leaders and a count. */
+const rowClass = cn(
+  // relative: contains the visually hidden input, so focusing it can't scroll the page.
+  'group relative flex cursor-pointer items-baseline gap-2 border-l-2 border-transparent py-1 pr-2 pl-2.5 text-ui text-ink',
+  'transition-colors duration-(--dur-quick) hover:bg-bg-step',
+  'has-checked:border-moss has-checked:bg-bg-step has-checked:font-medium',
+  'has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-moss',
+  'has-disabled:cursor-default has-disabled:text-ink-faint has-disabled:hover:bg-transparent',
+);
+
+function Leader() {
+  return <span aria-hidden="true" className="mb-[0.3em] min-w-4 flex-1 border-b border-dotted border-ink-faint" />;
+}
+
+function Count({ n }: { n: number }) {
+  return (
+    <span className="font-mono text-meta text-ink-dim tabular-nums group-has-disabled:text-ink-faint">
+      {n.toLocaleString('en-CA')}
+    </span>
+  );
+}
+
+export default function BrowseSidebar({
+  features,
+  filtered,
+  filters,
+  onFiltersChange,
+  onSelectStore,
+  lastSyncedAt,
+}: BrowseSidebarProps) {
+  const ids = useId();
+  const total = features.length;
+  const active = hasFilters(filters);
+  const query = filters.query.trim();
+
+  // Facet counts: each facet counts against every *other* active filter, so
+  // a number always says what choosing that row would show.
+  const byProvince = useMemo(
+    () => provinceCounts(filterFeatures(features, filters, 'province')),
+    [features, filters],
+  );
+  const provinceTotal = useMemo(
+    () => Object.values(byProvince).reduce((a, b) => a + b, 0),
+    [byProvince],
+  );
+  const bySpecialty = useMemo(
+    () => specialtyCounts(filterFeatures(features, filters, 'specialties')),
+    [features, filters],
+  );
+  // Only the tags actually in use, most common first (AUDIT, Content reality).
+  const tagsInUse = useMemo(() => {
+    const all = specialtyCounts(features);
+    return Object.keys(all).sort((a, b) => all[b] - all[a] || a.localeCompare(b));
+  }, [features]);
+  const tagged = useMemo(() => features.filter((f) => specialtiesOf(f.properties).length > 0).length, [features]);
+  const withHours = useMemo(() => features.filter((f) => f.properties.hours_raw).length, [features]);
+
+  const matches = useMemo(() => {
+    if (!query) return [];
+    const q = fold(query);
+    return [...filtered].sort((a, b) => {
+      const aStarts = fold(a.properties.name).startsWith(q) ? 0 : 1;
+      const bStarts = fold(b.properties.name).startsWith(q) ? 0 : 1;
+      return aStarts - bStarts || a.properties.name.localeCompare(b.properties.name, 'en-CA');
+    });
+  }, [filtered, query]);
+
+  const set = (patch: Partial<BrowseFilters>) => onFiltersChange({ ...filters, ...patch });
+  const toggleSpecialty = (tag: string, on: boolean) =>
+    set({ specialties: on ? [...filters.specialties, tag] : filters.specialties.filter((t) => t !== tag) });
+
+  const provinceRow = (value: string | null, label: string, n: number) => {
+    const checked = filters.province === value;
+    return (
+      <li key={value ?? 'all'}>
+        <label className={rowClass}>
+          <input
+            type="radio"
+            name={`${ids}-province`}
+            className="sr-only"
+            checked={checked}
+            disabled={n === 0 && !checked}
+            onChange={() => set({ province: value })}
+          />
+          <span>{label}</span>
+          <Leader />
+          <Count n={n} />
+        </label>
+      </li>
+    );
+  };
 
   return (
     // The panel container (desktop column / mobile sheet) is MapPanel.
-    <div>
-      <h2 className="font-display text-xl font-semibold text-ink">
+    <div className="flex flex-1 flex-col">
+      {/* Display, then body, then controls. */}
+      <h2 className="font-display text-title font-bold text-balance text-ink">
         Every independent bookstore in Canada. Eventually.
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-ink-dim">
+      <p className="mt-3 text-body text-ink-dim">
         This is a working map, built one shop at a time. Independently owned
         only. Tap a pin for hours, specialties, and the reason to go. Found one
         that&rsquo;s missing? Tell me.
       </p>
 
-      <p className="mt-4 font-mono text-xs uppercase tracking-widest text-amber">
-        {storeCount} {storeCount === 1 ? 'store' : 'stores'} mapped
-      </p>
-
-      <div className="relative mt-6 border-t border-line pt-6">
-        <div className="pointer-events-none select-none opacity-30">
-          <input
-            type="text"
-            disabled
-            placeholder="Search by name or city"
-            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink-dim placeholder:text-ink-faint disabled:cursor-not-allowed"
-          />
-
-          <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-ink-dim">
-            Filters
-          </h3>
-
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <label
-              htmlFor="province-filter"
-              className="font-mono text-xs uppercase tracking-widest text-ink-faint"
-            >
-              Province
-            </label>
-            <select
-              id="province-filter"
-              disabled
-              defaultValue=""
-              className="rounded-md border border-line bg-bg px-2 py-1 text-sm text-ink-dim disabled:cursor-not-allowed"
-            >
-              <option value="">All</option>
-              {PROVINCES.map((province) => (
-                <option key={province} value={province}>
-                  {province}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <span className="font-mono text-xs uppercase tracking-widest text-ink-faint">
-              Open now
-            </span>
-            <button
-              type="button"
-              disabled
-              aria-label="Open now filter (coming soon)"
-              className="relative h-5 w-9 cursor-not-allowed rounded-full border border-line bg-bg"
-            >
-              <span className="absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-ink-faint" />
-            </button>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {SPECIALTIES.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-moss-deep/40 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-moss"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="absolute inset-0 top-6 flex items-center justify-center">
-          <span className="rounded-full border border-line bg-bg-raised px-4 py-1.5 font-mono text-xs uppercase tracking-widest text-ink-faint shadow-sm">
-            Coming soon
-          </span>
-        </div>
+      {/* Find: a ruled line, as on an index form */}
+      <div
+        className={cn(
+          'mt-8 flex items-baseline gap-3 border-b border-line-strong pb-1.5',
+          'transition-colors duration-(--dur-quick) focus-within:border-moss hover:border-moss',
+          'has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-moss',
+        )}
+      >
+        <label htmlFor={`${ids}-find`} className="font-display text-prose text-ink italic">
+          Find
+        </label>
+        <input
+          id={`${ids}-find`}
+          type="search"
+          value={filters.query}
+          onChange={(e) => set({ query: e.target.value })}
+          placeholder="a store or a town"
+          autoComplete="off"
+          spellCheck={false}
+          className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+        />
+        {filters.query && (
+          <button
+            type="button"
+            onClick={() => set({ query: '' })}
+            className="shrink-0 text-meta text-ink-dim transition-colors duration-(--dur-quick) hover:text-moss"
+          >
+            Clear<span className="sr-only"> the search</span>
+          </button>
+        )}
       </div>
 
-      <div className="mt-6 border-t border-line pt-6">
-        <h3 className="font-mono text-xs uppercase tracking-widest text-ink-dim">
+      <p role="status" aria-live="polite" className="mt-2 min-h-[1lh] text-meta text-ink-dim">
+        {active && (
+          <>
+            Showing <span className="font-mono text-ink tabular-nums">{filtered.length.toLocaleString('en-CA')}</span> of{' '}
+            <span className="font-mono tabular-nums">{total.toLocaleString('en-CA')}</span> mapped stores
+            <span aria-hidden="true"> · </span>
+            <button type="button" onClick={() => onFiltersChange({ query: '', province: null, specialties: [] })} className={linkClass}>
+              Clear all
+            </button>
+          </>
+        )}
+      </p>
+
+      {query && (
+        <div className="mt-2">
+          {matches.length === 0 ? (
+            <p className="font-display text-ui text-ink-faint italic">
+              No store or town on the map matches &ldquo;{query}&rdquo;.
+            </p>
+          ) : (
+            <>
+              <ul aria-label="Matching stores" className="border-t border-line">
+                {matches.slice(0, MAX_MATCHES).map(({ properties: p }) => {
+                  const place = [p.city, p.province].filter(Boolean).join(', ');
+                  return (
+                    <li key={p.slug} className="border-b border-line">
+                      <button
+                        type="button"
+                        onClick={() => onSelectStore(p.slug)}
+                        className="flex w-full items-baseline gap-3 px-2.5 py-1.5 text-left text-ui transition-colors duration-(--dur-quick) hover:bg-bg-step focus-visible:-outline-offset-2"
+                      >
+                        <span className="min-w-0 flex-1 text-ink">{p.name}</span>
+                        <span className="shrink-0 font-display text-ink-faint italic">{place || 'Unplaced'}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {matches.length > MAX_MATCHES && (
+                <p className={cn(note, 'mt-1.5')}>
+                  And <span className="font-mono tabular-nums">{matches.length - MAX_MATCHES}</span> more on the map.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Provinces and territories: the gazetteer index */}
+      <fieldset className="mt-6">
+        <legend className="mb-2 flex w-full items-baseline justify-between gap-3">
+          <span className={sectionHead}>Provinces and territories</span>
+          <span className="font-display text-meta text-ink-faint italic">west to east</span>
+        </legend>
+        <ul>
+          {provinceRow(null, 'All of Canada', provinceTotal)}
+        </ul>
+        <ul className="mt-1 border-t border-line pt-1">
+          {PROVINCE_ORDER.map((code) => provinceRow(code, provinceName(code) ?? code, byProvince[code] ?? 0))}
+        </ul>
+        <ul className="mt-1 border-t border-line pt-1">
+          {provinceRow(UNPLACED, 'Unplaced', byProvince[UNPLACED] ?? 0)}
+        </ul>
+        <p className={cn(note, 'mt-1.5 pl-3')}>
+          Unplaced stores are on the map, but their province isn&rsquo;t recorded yet.
+        </p>
+      </fieldset>
+
+      {/* Specialty: a short checklist of the tags in use */}
+      {tagsInUse.length > 0 && (
+        <fieldset className="mt-8">
+          <legend className={cn(sectionHead, 'mb-2')}>Specialty</legend>
+          <ul>
+            {tagsInUse.map((tag) => {
+              const checked = filters.specialties.includes(tag);
+              const n = bySpecialty[tag] ?? 0;
+              return (
+                <li key={tag}>
+                  <label className={cn(rowClass, 'items-center has-checked:border-transparent')}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      disabled={n === 0 && !checked}
+                      onChange={(e) => toggleSpecialty(tag, e.target.checked)}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'grid size-3.5 shrink-0 place-items-center border border-ink-dim bg-bg transition-colors duration-(--dur-quick)',
+                        'group-hover:border-moss group-has-checked:border-moss group-has-checked:bg-moss',
+                        'group-has-disabled:border-line-strong group-has-disabled:group-hover:border-line-strong',
+                      )}
+                    >
+                      <CheckIcon className="hidden size-3 stroke-[2.25] text-bg group-has-checked:block" />
+                    </span>
+                    <span>{specialtyLabel(tag)}</span>
+                    <Leader />
+                    <Count n={n} />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <p className={cn(note, 'mt-1.5 pl-3')}>
+            <span className="font-mono tabular-nums">{tagged}</span> of{' '}
+            <span className="font-mono tabular-nums">{total.toLocaleString('en-CA')}</span> mapped stores list a
+            specialty so far.
+          </p>
+        </fieldset>
+      )}
+
+      {/* Open now: not built. Said plainly, no control, no "Coming soon". */}
+      <section aria-labelledby={`${ids}-open`} className="mt-8">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 id={`${ids}-open`} className={sectionHead}>
+            Open now
+          </h3>
+          <span className="font-display text-ui text-ink-faint italic">planned</span>
+        </div>
+        <p className={cn(note, 'mt-1')}>
+          This filter needs each store&rsquo;s opening hours in the map&rsquo;s data first. Hours are listed for{' '}
+          <span className="font-mono tabular-nums">{withHours}</span> mapped stores so far.
+        </p>
+      </section>
+
+      <section aria-labelledby={`${ids}-hood`} className="mt-10 border-t border-ink-faint pt-4">
+        <h3 id={`${ids}-hood`} className="font-display text-prose text-ink-dim italic">
           Under the hood
         </h3>
-        <p className="mt-3 text-xs leading-relaxed text-ink-faint">
+        <p className="mt-2 text-ui text-ink-dim">
           A Python pipeline pulls stores from OpenStreetMap, CIBA, and
           Wikidata, with ALQ coming for Quebec. It diffs against what&apos;s
           already stored every week, refreshes hours and phone numbers from
@@ -135,13 +313,13 @@ export default function BrowseSidebar({ initialData, lastSyncedAt }: BrowseSideb
           Every record carries a completeness score, and a person verifies each
           store before it appears. The map queries it live.
         </p>
-        <DataFreshness syncedAt={lastSyncedAt} className="mt-4" />
-        <Link
-          href="/about"
-          className="mt-4 inline-block font-mono text-xs uppercase tracking-widest text-amber hover:underline"
-        >
+        <Link href="/about" className={cn(linkClass, 'mt-3 inline-block text-ui')}>
           How this works →
         </Link>
+      </section>
+
+      <div className="mt-auto pt-10">
+        <EditionLine imprint="Plate 1" count={total} countLabel="mapped" syncedAt={lastSyncedAt} />
       </div>
     </div>
   );

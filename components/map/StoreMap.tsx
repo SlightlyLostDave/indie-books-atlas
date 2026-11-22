@@ -3,19 +3,29 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { StoreFeatureCollection, StoreFeatureProperties } from "@/lib/types";
+import type { StoreFeature, StoreFeatureCollection } from "@/lib/types";
 import { useTheme } from "@/lib/useTheme";
 import { MAP_STYLES } from "@/lib/map";
 
 interface StoreMapProps {
-  initialData: StoreFeatureCollection;
-  onSelectStore: (properties: StoreFeatureProperties) => void;
+  /** The stores to draw: the full set, or the browse panel's filtered subset. */
+  data: StoreFeatureCollection;
+  onSelectStore: (slug: string) => void;
   selectedSlug: string | null | undefined;
+  /** A store chosen from the index: the camera moves to it. */
+  focus: StoreFeature | null;
+}
+
+const DESKTOP = "(min-width: 768px)";
+
+/** The theme as the document has it right now (not the hydration snapshot). */
+function documentTheme(): "light" | "dark" {
+  return document.documentElement.classList.contains("light") ? "light" : "dark";
 }
 
 const SOURCE_ID = "stores";
 
-export default function StoreMap({ initialData, onSelectStore, selectedSlug }: StoreMapProps) {
+export default function StoreMap({ data, onSelectStore, selectedSlug, focus }: StoreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const selectedSlugRef = useRef<string | null | undefined>(null);
@@ -26,12 +36,11 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
     onSelectStoreRef.current = onSelectStore;
   }, [onSelectStore]);
 
-  const initialDataRef = useRef(initialData);
+  const styleRef = useRef<string | null>(null);
+  const dataRef = useRef(data);
   useEffect(() => {
-    initialDataRef.current = initialData;
-  }, [initialData]);
-
-  const initialThemeRef = useRef(theme);
+    dataRef.current = data;
+  }, [data]);
 
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
@@ -43,9 +52,12 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
     }
     mapboxgl.accessToken = mapboxToken;
 
+    // Read the theme from the document, not the hydration-time snapshot
+    // (always "dark"), so a light visitor gets the light basemap (F-MAP-4).
+    styleRef.current = MAP_STYLES[documentTheme()];
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: MAP_STYLES[initialThemeRef.current],
+      style: styleRef.current,
       center: [-96, 56], // roughly centred on Canada
       zoom: 3,
     });
@@ -55,7 +67,7 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
     const addStoreLayers = () => {
       map.addSource(SOURCE_ID, {
         type: "geojson",
-        data: initialDataRef.current,
+        data: dataRef.current,
         cluster: true,
         clusterMaxZoom: 13,
         clusterRadius: 50,
@@ -121,7 +133,8 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
       map.on("click", "unclustered-point", (e) => {
         const feature = e.features?.[0];
         if (!feature) return;
-        onSelectStoreRef.current(feature.properties as StoreFeatureProperties);
+        const slug = feature.properties?.slug;
+        if (typeof slug === "string") onSelectStoreRef.current(slug);
       });
 
       map.on("mouseenter", "unclustered-point", () => {
@@ -173,9 +186,35 @@ export default function StoreMap({ initialData, onSelectStore, selectedSlug }: S
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-    map.setStyle(MAP_STYLES[theme]);
+    // The first render after hydration reports the server snapshot ("dark");
+    // only act on the theme the document actually has.
+    if (!map || theme !== documentTheme()) return;
+    const style = MAP_STYLES[theme];
+    if (styleRef.current === style) return;
+    styleRef.current = style;
+    map.setStyle(style);
   }, [theme]);
+
+  // Filters redraw the one GeoJSON source; clusters recompute from it.
+  useEffect(() => {
+    const map = mapRef.current;
+    const source = map?.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    source?.setData(data);
+  }, [data]);
+
+  // A store picked from the index: move to it, clear of the bottom sheet on
+  // mobile, and close enough that it's a point rather than a cluster.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    const [lng, lat] = focus.geometry.coordinates;
+    const mobile = !window.matchMedia(DESKTOP).matches;
+    map.easeTo({
+      center: [lng, lat],
+      zoom: Math.max(map.getZoom(), 14),
+      padding: mobile ? { top: 0, bottom: Math.round(window.innerHeight * 0.52), left: 0, right: 0 } : 0,
+    });
+  }, [focus]);
 
   useEffect(() => {
     const map = mapRef.current;

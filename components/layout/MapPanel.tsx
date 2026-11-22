@@ -157,9 +157,11 @@ export default function MapPanel({ mode, entryKey, onBack, mobileFooter, childre
 
       <div
         id={bodyId}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain max-md:group-data-[sheet=peek]/sheet:overflow-hidden"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain max-md:group-data-[sheet=peek]/sheet:overflow-hidden"
       >
-        <div className="px-[1.125rem] pt-4 pb-8 md:px-7 md:pt-5 md:pb-10">{children}</div>
+        {/* Fills the column (or sheet) so an entry's foot sits at the bottom
+            instead of the panel ending in dead space. */}
+        <div className="flex flex-1 flex-col px-[1.125rem] pt-4 pb-8 md:px-7 md:pt-5 md:pb-8">{children}</div>
         {mobileFooter && <div className="md:hidden">{mobileFooter}</div>}
       </div>
     </aside>
