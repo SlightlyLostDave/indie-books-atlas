@@ -105,7 +105,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-3 text-left text-meta text-ink-faint", className)}
+      className={cn("mt-3 text-left text-meta text-ink-quiet", className)}
       {...props}
     />
   )

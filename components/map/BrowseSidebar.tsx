@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useRef, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import EditionLine from '@/components/layout/EditionLine';
 import { CheckIcon } from '@/components/ui/icons';
@@ -36,7 +36,7 @@ interface BrowseSidebarProps {
 const MAX_MATCHES = 8;
 
 const sectionHead = 'font-display text-prose font-semibold text-ink';
-const note = 'text-meta text-ink-faint';
+const note = 'text-meta text-ink-quiet';
 
 /** One gazetteer line: a control, the name, dot leaders and a count. */
 const rowClass = cn(
@@ -95,6 +95,25 @@ export default function BrowseSidebar({
   const tagged = useMemo(() => features.filter((f) => specialtiesOf(f.properties).length > 0).length, [features]);
   const withHours = useMemo(() => features.filter((f) => f.properties.hours_raw).length, [features]);
 
+  // With a search that finds nothing here, how many it would find with the
+  // province and specialty filters lifted: the way to widen a zero result.
+  const scoped = filters.province !== null || filters.specialties.length > 0;
+  const elsewhere = useMemo(() => {
+    if (!query || !scoped) return 0;
+    return filterFeatures(features, { query, province: null, specialties: [] }).length;
+  }, [features, query, scoped]);
+  const scopeWords = [
+    filters.province === UNPLACED ? 'among unplaced stores' : filters.province ? `in ${provinceName(filters.province)}` : null,
+    filters.specialties.length > 0
+      ? `among ${filters.specialties.map((t) => specialtyLabel(t).toLowerCase()).join(' or ')} stores`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const findRef = useRef<HTMLInputElement>(null);
+  const matchList = useRef<HTMLUListElement>(null);
+
   const matches = useMemo(() => {
     if (!query) return [];
     const q = fold(query);
@@ -106,6 +125,29 @@ export default function BrowseSidebar({
   }, [filtered, query]);
 
   const set = (patch: Partial<BrowseFilters>) => onFiltersChange({ ...filters, ...patch });
+  const widen = () => set({ province: null, specialties: [] });
+
+  // Keyboard: Enter in Find opens the top match; the arrow keys move between
+  // Find and the matches, as in a combobox's list.
+  const matchButtons = () => Array.from(matchList.current?.querySelectorAll<HTMLButtonElement>('button') ?? []);
+  const onFindKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && matches.length > 0) {
+      e.preventDefault();
+      onSelectStore(matches[0].properties.slug);
+    } else if (e.key === 'ArrowDown' && matches.length > 0) {
+      e.preventDefault();
+      matchButtons()[0]?.focus();
+    }
+  };
+  const onMatchKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const buttons = matchButtons();
+    const i = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) return;
+    e.preventDefault();
+    if (e.key === 'ArrowUp' && i === 0) findRef.current?.focus();
+    else buttons[Math.max(0, Math.min(buttons.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]?.focus();
+  };
   const toggleSpecialty = (tag: string, on: boolean) =>
     set({ specialties: on ? [...filters.specialties, tag] : filters.specialties.filter((t) => t !== tag) });
 
@@ -134,7 +176,7 @@ export default function BrowseSidebar({
     // The panel container (desktop column / mobile sheet) is MapPanel.
     <div className="flex flex-1 flex-col">
       {/* Display, then body, then controls. */}
-      <h2 className="font-display text-title font-bold text-balance text-ink">
+      <h2 data-panel-focus tabIndex={-1} className="font-display text-title font-bold text-balance text-ink outline-offset-4">
         Every independent bookstore in Canada. Eventually.
       </h2>
       <p className="mt-3 text-body text-ink-dim">
@@ -146,7 +188,7 @@ export default function BrowseSidebar({
       {/* Find: a ruled line, as on an index form */}
       <div
         className={cn(
-          'mt-8 flex items-baseline gap-3 border-b border-line-strong pb-1.5',
+          'mt-8 flex items-baseline gap-3 border-b border-ink-faint pb-1.5',
           'transition-colors duration-(--dur-quick) focus-within:border-moss hover:border-moss',
           'has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-moss',
         )}
@@ -156,13 +198,16 @@ export default function BrowseSidebar({
         </label>
         <input
           id={`${ids}-find`}
+          ref={findRef}
           type="search"
           value={filters.query}
           onChange={(e) => set({ query: e.target.value })}
+          onKeyDown={onFindKeyDown}
+          aria-describedby={`${ids}-shown`}
           placeholder="a store or a town"
           autoComplete="off"
           spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+          className="min-w-0 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-quiet focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
         />
         {filters.query && (
           <button
@@ -175,11 +220,16 @@ export default function BrowseSidebar({
         )}
       </div>
 
-      <p role="status" aria-live="polite" className="mt-2 min-h-[1lh] text-meta text-ink-dim">
+      <p id={`${ids}-shown`} role="status" aria-live="polite" className="mt-2 min-h-[1lh] text-meta text-ink-dim">
         {active && (
           <>
-            Showing <span className="font-mono text-ink tabular-nums">{filtered.length.toLocaleString('en-CA')}</span> of{' '}
-            <span className="font-mono tabular-nums">{total.toLocaleString('en-CA')}</span> mapped stores
+            Showing{' '}
+            {filtered.length === 0 ? (
+              'none'
+            ) : (
+              <span className="font-mono text-ink tabular-nums">{filtered.length.toLocaleString('en-CA')}</span>
+            )}{' '}
+            of <span className="font-mono tabular-nums">{total.toLocaleString('en-CA')}</span> mapped stores
             <span aria-hidden="true"> · </span>
             <button type="button" onClick={() => onFiltersChange({ query: '', province: null, specialties: [] })} className={linkClass}>
               Clear all
@@ -191,12 +241,35 @@ export default function BrowseSidebar({
       {query && (
         <div className="mt-2">
           {matches.length === 0 ? (
-            <p className="font-display text-ui text-ink-faint italic">
-              No store or town on the map matches &ldquo;{query}&rdquo;.
-            </p>
+            // A zero result says where it looked and leads somewhere: wider,
+            // or to the form that adds a missing store. Never a dead end.
+            <div className="border-t border-line pt-2.5 text-ui text-ink-dim">
+              <p>
+                <span className="font-display text-ink-quiet italic">
+                  No store or town {scopeWords || 'on the map'} matches &ldquo;{query}&rdquo;.
+                </span>
+                {elsewhere > 0 && (
+                  <>
+                    {' '}
+                    <span className="font-mono text-ink tabular-nums">{elsewhere}</span>{' '}
+                    {elsewhere === 1 ? 'does' : 'do'} elsewhere in Canada.
+                  </>
+                )}
+              </p>
+              <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+                {elsewhere > 0 && (
+                  <button type="button" onClick={widen} className={linkClass}>
+                    Search all of Canada
+                  </button>
+                )}
+                <Link href="/submit" className={linkClass}>
+                  {elsewhere > 0 ? 'Suggest a missing store' : 'Know it? Suggest a store'}
+                </Link>
+              </p>
+            </div>
           ) : (
             <>
-              <ul aria-label="Matching stores" className="border-t border-line">
+              <ul ref={matchList} onKeyDown={onMatchKeyDown} aria-label="Matching stores" className="border-t border-line">
                 {matches.slice(0, MAX_MATCHES).map(({ properties: p }) => {
                   const place = [p.city, p.province].filter(Boolean).join(', ');
                   return (
@@ -207,7 +280,7 @@ export default function BrowseSidebar({
                         className="flex w-full items-baseline gap-3 px-2.5 py-1.5 text-left text-ui transition-colors duration-(--dur-quick) hover:bg-bg-step focus-visible:-outline-offset-2"
                       >
                         <span className="min-w-0 flex-1 text-ink">{p.name}</span>
-                        <span className="shrink-0 font-display text-ink-faint italic">{place || 'Unplaced'}</span>
+                        <span className="shrink-0 font-display text-ink-quiet italic">{place || 'Unplaced'}</span>
                       </button>
                     </li>
                   );
@@ -227,7 +300,7 @@ export default function BrowseSidebar({
       <fieldset className="mt-6">
         <legend className="mb-2 flex w-full items-baseline justify-between gap-3">
           <span className={sectionHead}>Provinces and territories</span>
-          <span className="font-display text-meta text-ink-faint italic">west to east</span>
+          <span className="font-display text-meta text-ink-quiet italic">west to east</span>
         </legend>
         <ul>
           {provinceRow(null, 'All of Canada', provinceTotal)}
@@ -293,7 +366,7 @@ export default function BrowseSidebar({
           <h3 id={`${ids}-open`} className={sectionHead}>
             Open now
           </h3>
-          <span className="font-display text-ui text-ink-faint italic">planned</span>
+          <span className="font-display text-ui text-ink-quiet italic">planned</span>
         </div>
         <p className={cn(note, 'mt-1')}>
           This filter needs each store&rsquo;s opening hours in the map&rsquo;s data first. Hours are listed for{' '}

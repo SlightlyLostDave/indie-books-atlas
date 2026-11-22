@@ -20,7 +20,7 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-none border border-line-strong bg-bg transition-colors duration-(--dur-quick) ease-(--ease-plate) outline-none after:absolute after:-inset-x-3 after:-inset-y-2 hover:border-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-danger data-[size=default]:h-[18px] data-[size=default]:w-[34px] data-[size=sm]:h-[14px] data-[size=sm]:w-[26px] data-checked:border-moss data-checked:bg-moss data-disabled:cursor-not-allowed data-disabled:border-line data-disabled:bg-transparent data-disabled:data-checked:bg-line-strong",
+        "peer group/switch relative inline-flex shrink-0 items-center rounded-none border border-ink-faint bg-bg transition-colors duration-(--dur-quick) ease-(--ease-plate) outline-none after:absolute after:-inset-x-3 after:-inset-y-2 hover:border-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-danger data-[size=default]:h-[18px] data-[size=default]:w-[34px] data-[size=sm]:h-[14px] data-[size=sm]:w-[26px] data-checked:border-moss data-checked:bg-moss data-disabled:cursor-not-allowed data-disabled:border-line data-disabled:bg-transparent data-disabled:data-checked:bg-line-strong",
         className
       )}
       {...props}

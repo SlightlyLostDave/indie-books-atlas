@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { StoreFeature, StoreFeatureCollection } from "@/lib/types";
 import { useTheme } from "@/lib/useTheme";
 import { ATLAS_PROJECTION, nationalCamera } from "@/lib/map";
+import { motionMs } from "@/lib/motion";
 import { loadBoundary } from "@/lib/map/boundary";
 import { readMapPalette, type MapTheme } from "@/lib/map/palette";
 import { buildAtlasStyle, loadBaseStyle } from "@/lib/map/style";
@@ -30,7 +31,16 @@ interface StoreMapProps {
   selected: StoreFeature | null;
   /** A store chosen from the index: the camera moves to it. */
   focus: StoreFeature | null;
+  /**
+   * The region the index is set to: a province's extent, or "national" for
+   * all of Canada. The camera reframes when it changes (a filter change).
+   */
+  frame: { key: string; bounds: [[number, number], [number, number]] | "national" } | null;
 }
+
+/** The canvas's accessible name. The index is the way to reach each store. */
+const MAP_LABEL =
+  "Map of Canada's independent bookstores. Arrow keys pan, plus and minus zoom. The index panel lists every store on the map.";
 
 const DESKTOP = "(min-width: 768px)";
 
@@ -39,7 +49,7 @@ function documentTheme(): MapTheme {
   return document.documentElement.classList.contains("light") ? "light" : "dark";
 }
 
-export default function StoreMap({ data, onSelectStore, selected, focus }: StoreMapProps) {
+export default function StoreMap({ data, onSelectStore, selected, focus, frame }: StoreMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const theme = useTheme();
@@ -70,6 +80,8 @@ export default function StoreMap({ data, onSelectStore, selected, focus }: Store
     return buildAtlasStyle(base, palette, boundary, {
       sources: storeSources(dataRef.current, selectedRef.current),
       layers: storeLayers(palette),
+      // A theme switch diffs the new palette in over the page's crossfade.
+      paintTransitionMs: motionMs("--dur-move"),
     });
   };
 
@@ -106,6 +118,7 @@ export default function StoreMap({ data, onSelectStore, selected, focus }: Store
           dragRotate: false,
           pitchWithRotate: false,
           touchPitch: false,
+          locale: { "Map.Title": MAP_LABEL },
         });
         map.touchZoomRotate.disableRotation();
         mapRef.current = map;
@@ -178,7 +191,9 @@ export default function StoreMap({ data, onSelectStore, selected, focus }: Store
         const source = map.getSource(STORE_SOURCE) as mapboxgl.GeoJSONSource;
         source.getClusterExpansionZoom(clusterId, (err, zoom) => {
           if (err || zoom == null) return;
-          map.easeTo({ center, zoom });
+          // Reduced motion: the cluster opens without the camera travelling.
+          if (motionMs("--dur-move") === 0) map.jumpTo({ center, zoom });
+          else map.easeTo({ center, zoom });
         });
       });
     }
@@ -220,19 +235,56 @@ export default function StoreMap({ data, onSelectStore, selected, focus }: Store
     source?.setData(selectionData(selected));
   }, [selected]);
 
-  // A store picked from the index: move to it, clear of the bottom sheet on
-  // mobile, and close enough that it's a point rather than a cluster.
+  // Store select (DESIGN.md, Motion): a store picked from the index. The
+  // camera travels to it, clear of the bottom sheet on mobile and close
+  // enough that it's a point rather than a cluster. Nearby, it eases; from
+  // across the country it flies, out and back in, so the reader sees where
+  // the store is. Reduced motion jumps. A map click never moves the camera.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !focus) return;
     const [lng, lat] = focus.geometry.coordinates;
     const mobile = !window.matchMedia(DESKTOP).matches;
-    map.easeTo({
-      center: [lng, lat],
+    const target = {
+      center: [lng, lat] as [number, number],
       zoom: Math.max(map.getZoom(), 14),
       padding: mobile ? { top: 0, bottom: Math.round(window.innerHeight * 0.52), left: 0, right: 0 } : 0,
-    });
+    };
+    const cap = motionMs("--dur-camera");
+    if (cap === 0) {
+      map.jumpTo(target);
+      return;
+    }
+    const near = map.getZoom() >= 9 && map.getBounds()?.contains([lng, lat]);
+    if (near) map.easeTo({ ...target, duration: Math.round(cap * 0.45) });
+    else map.flyTo({ ...target, duration: cap, curve: 1.6, essential: true });
   }, [focus]);
+
+  // Filter change (DESIGN.md, Motion): choosing a province turns to its
+  // regional plate; "All of Canada" turns back to the national one. Other
+  // filters only redraw the points, in place. Nothing moves with reduced
+  // motion except the frame itself, which jumps.
+  const frameKey = frame?.key ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !frame) return;
+    const container = map.getContainer();
+    const duration = Math.round(motionMs("--dur-camera") * 0.6);
+    if (frame.bounds === "national") {
+      const camera = nationalCamera(container.clientWidth, container.clientHeight);
+      if (duration === 0) map.jumpTo(camera);
+      else map.easeTo({ ...camera, duration });
+      return;
+    }
+    const mobile = !window.matchMedia(DESKTOP).matches;
+    // Clear of the title block (top left) on desktop, and of the sheet's peek on mobile.
+    const padding = mobile
+      ? { top: 56, right: 24, bottom: 24, left: 24 }
+      : { top: 150, right: 48, bottom: 48, left: 48 };
+    map.fitBounds(frame.bounds, { padding, maxZoom: 9, duration, essential: true });
+    // Only a new frame moves the camera; the bounds object changes identity every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frameKey]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

@@ -37,7 +37,7 @@ export function AdminPageHeader({
       )}
       <h1 className="flex flex-wrap items-baseline gap-x-3 font-display text-title font-bold text-balance text-ink">
         {title}
-        {marker && <span className="font-display text-prose font-normal text-ink-faint italic">{marker}</span>}
+        {marker && <span className="font-display text-prose font-normal text-ink-quiet italic">{marker}</span>}
       </h1>
       {lede && <p className="mt-1.5 font-display text-prose text-ink-dim italic">{lede}</p>}
       {children}

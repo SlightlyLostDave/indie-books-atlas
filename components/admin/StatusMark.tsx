@@ -11,7 +11,7 @@ export type StoreStatus = "verified" | "unverified" | "review" | "closed" | "del
  */
 const MARKS: Record<StoreStatus, { label: string; short: string; Glyph: typeof CheckIcon; tone: string }> = {
   verified: { label: "Verified", short: "Verified", Glyph: CheckIcon, tone: "text-moss" },
-  unverified: { label: "Unverified", short: "Unverified", Glyph: DotMark, tone: "text-ink-faint" },
+  unverified: { label: "Unverified", short: "Unverified", Glyph: DotMark, tone: "text-ink-quiet" },
   review: { label: "Needs review", short: "Review", Glyph: FlagMark, tone: "text-amber" },
   closed: { label: "Permanently closed", short: "Closed", Glyph: CloseIcon, tone: "text-danger" },
   deleted: { label: "Deleted", short: "Deleted", Glyph: CloseIcon, tone: "text-ink-dim" },

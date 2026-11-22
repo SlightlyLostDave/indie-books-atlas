@@ -53,7 +53,7 @@ function Note({
       aria-labelledby={id}
       className="grid gap-x-12 border-t border-ink-faint pt-5 lg:grid-cols-[9rem_minmax(0,1fr)]"
     >
-      <p className="font-display text-ui text-ink-faint italic lg:pt-1.5">
+      <p className="font-display text-ui text-ink-quiet italic lg:pt-1.5">
         Note <span className="lining-nums">{index}</span>
       </p>
       <div className="min-w-0">
@@ -71,7 +71,7 @@ function SourceRow({ label, planned, children }: { label: string; planned?: stri
     <div className="grid grid-cols-1 gap-1 border-b border-line py-3.5 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
       <dt className="font-display text-prose text-ink italic">
         {label}
-        {planned && <span className="text-ink-faint"> · {planned}</span>}
+        {planned && <span className="text-ink-quiet"> · {planned}</span>}
       </dt>
       <dd className="text-body text-ink-dim">{children}</dd>
     </div>
@@ -110,7 +110,7 @@ export default async function AboutPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-(--gutter) pt-10 pb-16 md:pt-16">
         {/* Title page */}
         <header className="grid gap-x-12 lg:grid-cols-[9rem_minmax(0,1fr)]">
-          <p className="font-display text-ui text-ink-faint italic lg:pt-4">About the atlas</p>
+          <p className="font-display text-ui text-ink-quiet italic lg:pt-4">About the atlas</p>
           <div className="min-w-0">
             <h1 className="mt-1 font-display text-page font-bold text-balance text-ink lg:mt-0">
               A field guide to Canada&apos;s independent bookstores
@@ -334,7 +334,7 @@ export default async function AboutPage() {
           aria-labelledby="colophon-heading"
           className="mt-16 grid gap-x-12 border-t-2 border-ink pt-4 lg:grid-cols-[9rem_minmax(0,1fr)]"
         >
-          <h2 id="colophon-heading" className="font-display text-ui text-ink-faint italic">
+          <h2 id="colophon-heading" className="font-display text-ui text-ink-quiet italic">
             Colophon
           </h2>
           <div className="mt-1 space-y-1.5 text-ui text-ink-dim lg:mt-0">

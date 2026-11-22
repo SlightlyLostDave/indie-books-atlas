@@ -8,6 +8,12 @@ interface PlateProps {
   /** The index panel: a right column on desktop, a bottom sheet on mobile. */
   panel: ReactNode;
   storeCount: number;
+  /** How many stores pass the index's filters, or `null` with no filter set. */
+  shownCount?: number | null;
+  /** The store layer didn't load: say so, never "0 stores mapped". */
+  failed?: boolean;
+  /** The page is still loading (app/loading.tsx): no count yet. */
+  pending?: boolean;
 }
 
 /**
@@ -18,7 +24,7 @@ interface PlateProps {
  * Under 768px the plate is a single thin neatline that stops above the
  * sheet's peek height, so the map's attribution stays visible.
  */
-export default function Plate({ map, panel, storeCount }: PlateProps) {
+export default function Plate({ map, panel, storeCount, shownCount = null, failed = false, pending = false }: PlateProps) {
   const count = storeCount.toLocaleString("en-CA");
 
   return (
@@ -50,8 +56,28 @@ export default function Plate({ map, panel, storeCount }: PlateProps) {
             A field guide to Canada&apos;s independent bookstores
           </p>
           <div aria-hidden="true" className="mt-3 mb-2 hidden border-t-2 border-ink md:block" />
-          <p className="mt-1 font-mono text-label text-ink-dim md:mt-0 md:text-meta">
-            Plate 1 · {count} stores mapped
+          {/* The plate's legend line: what's on the plate right now. It
+              follows the index's filters, and a failed load reads as one. */}
+          <p className="mt-1 text-label text-ink-dim md:mt-0 md:text-meta">
+            Plate 1 ·{" "}
+            {pending ? (
+              <span className="font-display text-ink-quiet italic">counting the stores…</span>
+            ) : failed ? (
+              <span className="font-display text-ink-quiet italic">stores not loaded</span>
+            ) : shownCount === null ? (
+              <>
+                <span className="font-mono tabular-nums">{count}</span> stores mapped
+              </>
+            ) : shownCount === 0 ? (
+              <>
+                none of <span className="font-mono tabular-nums">{count}</span> shown
+              </>
+            ) : (
+              <>
+                <span className="font-mono tabular-nums">{shownCount.toLocaleString("en-CA")}</span> of{" "}
+                <span className="font-mono tabular-nums">{count}</span> shown
+              </>
+            )}
           </p>
         </div>
 

@@ -106,3 +106,20 @@ export function specialtyCounts(features: StoreFeature[]): Record<string, number
   }
   return counts;
 }
+
+/**
+ * The extent of a set of stores as [[west, south], [east, north]], trimmed
+ * to the 2nd to 98th percentile on each axis so one misplaced point can't
+ * stretch a province's frame across the country. `null` for an empty set.
+ */
+export function regionBounds(features: StoreFeature[]): [[number, number], [number, number]] | null {
+  if (features.length === 0) return null;
+  const lngs = features.map((f) => f.geometry.coordinates[0]).sort((a, b) => a - b);
+  const lats = features.map((f) => f.geometry.coordinates[1]).sort((a, b) => a - b);
+  const at = (values: number[], q: number) => values[Math.min(values.length - 1, Math.max(0, Math.round(q * (values.length - 1))))];
+  const trim = features.length >= 20 ? 0.02 : 0;
+  return [
+    [at(lngs, trim), at(lats, trim)],
+    [at(lngs, 1 - trim), at(lats, 1 - trim)],
+  ];
+}

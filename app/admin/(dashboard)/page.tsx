@@ -97,7 +97,7 @@ export default async function AdminDashboardPage() {
                 <p
                   className={cn(
                     "text-right font-mono text-title leading-none tabular-nums lining-nums",
-                    none ? "text-ink-faint" : "text-ink",
+                    none ? "text-ink-quiet" : "text-ink",
                   )}
                 >
                   {figure(item.count)}
@@ -108,7 +108,7 @@ export default async function AdminDashboardPage() {
                     {none && item.key !== "submissions" ? "Nothing waiting." : item.note}
                   </p>
                   {item.caveat && (
-                    <p className="mt-1.5 max-w-[36rem] font-display text-ui text-ink-faint italic">{item.caveat}</p>
+                    <p className="mt-1.5 max-w-[36rem] font-display text-ui text-ink-quiet italic">{item.caveat}</p>
                   )}
                 </div>
                 <p className="col-start-2 text-ui sm:col-start-3 sm:text-right">
@@ -142,7 +142,7 @@ export default async function AdminDashboardPage() {
             <dd>
               <DataFreshness syncedAt={metrics.lastSyncDate} />
               {metrics.lastSyncDate && (
-                <p className="mt-1 font-display text-ink-faint italic">
+                <p className="mt-1 font-display text-ink-quiet italic">
                   Approximate. This is the latest pipeline change to any store, which can differ from the sync run
                   the public site reports.
                 </p>

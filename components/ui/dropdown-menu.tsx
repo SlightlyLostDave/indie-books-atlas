@@ -65,7 +65,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 pt-2 pb-1 font-display text-meta italic text-ink-faint data-inset:pl-7",
+        "px-2 pt-2 pb-1 font-display text-meta italic text-ink-quiet data-inset:pl-7",
         className
       )}
       {...props}
@@ -239,7 +239,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "ml-auto font-mono text-label text-ink-faint group-focus/dropdown-menu-item:text-ink-dim",
+        "ml-auto font-mono text-label text-ink-quiet group-focus/dropdown-menu-item:text-ink-dim",
         className
       )}
       {...props}

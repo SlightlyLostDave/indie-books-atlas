@@ -495,3 +495,48 @@ Worth taking (structure and mood):
 Not worth taking:
 - Its pervasive mono caps and snake_case UI text are the same pattern this audit flags as generic (F-TYPE-1), taken further. Taking its mood should not mean taking its label voice.
 - The card layouts (BRIEF 1.2) and the parchment, sepia and aegean palette (CLAUDE.md).
+
+---
+
+## Re-run after Phase 7 (22 Nov 2026)
+
+The Phase 1 checklist, re-checked against the new UI, public and admin, in both themes at 1440 and 390. Screenshots are in [after/](./after/), named like [before/](./before/), plus new states (`home-loading`, `home-stores-failed`, `home-zero-in-province`, `home-selected-entry-failed`, `error-public`, `not-found`, `about-sync-unavailable`, `admin-stores-loading`, `admin-stores-stale`, `admin-stores-empty-combined`, `admin-store-save-failed`, `admin-store-action-failed`).
+
+| Item | Now | Where it was fixed |
+|---|---|---|
+| Default shadcn radius, ring, shadow tokens | Resolved: radius 0, the square moss outline, shadow and blur tokens reset | Phase 3 |
+| `rounded-full` everywhere | Resolved: circles are cartographic only | Phases 3 and 6 |
+| Mono uppercase `tracking-widest` overuse | Resolved: tracked caps only in the imprint and map political labels. The plate's legend line was still all mono; now only its figures are | Phases 3 to 5, 7 |
+| Lucide icons, untouched primitives | Resolved in the UI. `lucide-react` is still a dependency, unused | Phase 3 |
+| Header/map/sidebar/footer frame | Resolved: the plate | Phase 4 |
+| Stock Mapbox style and globe | Resolved: Lambert conic, atlas style from the tokens | Phase 6 |
+| Stock markers and clusters | Resolved | Phase 6 |
+| "Coming soon" pills and pages | Resolved: *planned* with what it waits on. /submit's "Submissions open soon" rewritten. One remnant in Dave's copy: "ALQ · coming" on /about | Phases 4, 5, 7 |
+| Low-contrast inactive states | Resolved. This phase also moved every reading use of `ink-faint` (3.2 to 3.9:1) to `ink-quiet` (4.7:1 or better) and field borders to 3:1 | Phases 3, 7 |
+| Generic empty, loading, error states | Resolved: every state is a short entry in the direction's voice (DESIGN.md, States) | Phase 7 |
+| A failed load looks like an empty atlas (F-STATE-3) | Resolved: `getStoresGeoJSON` returns `null` on error (the API route answers 503), and the plate says "stores not loaded" with Try again. Applied with Dave's OK | Phase 7 |
+| Uniform spacing | Resolved: role tokens and unequal spacing | Phase 3 |
+| Patterns repeated across routes | Resolved | Phases 3 to 5 |
+| Status-dot freshness line | Resolved, and it now has an honest unknown-date state | Phases 4, 7 |
+| Store page mini map | Resolved: the location inset | Phase 6 |
+| Admin top nav, metric tiles, stock table, colour badges, red scores | Resolved | Phase 5 |
+| Stock Clerk sign-in | Resolved: the in-app page through `appearance`. "Secured by Clerk" and "Development mode" remain (the latter only on the dev instance) | Phase 5 |
+| Stock Clerk UserButton | Partly: the popover is dressed, but the avatar is Clerk's default purple gradient | Phase 5 |
+| Default sonner toasts and alert dialogs | Resolved, and now captured (the failure toasts) | Phases 3, 7 |
+| Toast | Captured this phase, by a save whose request was blocked in the browser (Dave's OK) | Phase 7 |
+
+### Still generic, ranked by impact
+
+1. **The stock Create Next App favicon**, in every tab, bookmark and history entry. **Fixed**: `app/icon.svg` (the plate mark: double neatline and the amber point), `app/apple-icon.png` and a new `app/favicon.ico`.
+2. **The operating system's scrollbars** on the index panel, the sheet, the admin rail and long pages: a grey bar on the warm grounds. **Fixed**: thin `ink-faint` hairlines (`scrollbar-color`).
+3. **The operating system's blue text selection.** **Fixed**: moss at 34%.
+4. **The Clerk UserButton's default avatar** (a purple gradient), at the foot of the admin rail on every admin page. An `appearance` change (BRIEF 3.4), or initials, would fix it.
+5. **Link previews.** There's no Open Graph image, so a shared store link shows a bare card, and store page titles still use " — " (section 10).
+6. **Mapbox's attribution dress**: the bold "Improve this map" and the round "i" toggle on mobile. The content is required; only its dress could change.
+7. **The browser's disclosure triangle** on the admin error page's "Technical detail", and sonner's default stacking (toasts fan out on hover).
+8. **Leftover scaffolding**, invisible but public: `public/next.svg`, `vercel.svg`, `file.svg`, `globe.svg` and `window.svg` are still served, and `lucide-react` and `next-themes` are unused dependencies.
+
+### Proposals (not applied; BRIEF 3.2)
+
+- The comment on `getStoresList` in `lib/admin/stores.ts` still describes `getStoresGeoJSON` as swallowing errors into an empty result. `lib/admin` is off-limits in this pass (BRIEF 3.3), so it's left for Dave.
+- A store page that fails on its first on-demand render (a slug not built at deploy, during a database outage) gets Next's plain-text "Internal Server Error", even with `app/global-error.tsx` in place: Next answers a failed ISR render that way. Prebuilt pages keep serving their last good version. Catching the error in the page instead would change the "throw so ISR never caches a 404" behaviour in `getStoreBySlug`, so it's left as is.

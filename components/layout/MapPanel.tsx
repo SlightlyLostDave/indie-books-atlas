@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type SheetState = "peek" | "half" | "full";
@@ -37,6 +37,11 @@ function sheetHeights() {
  * The handle cycles through the states on tap or Enter, and can be dragged.
  * A drag snaps to the nearest state. Heights come from CSS (`data-sheet`), so
  * React only re-renders when the state changes, never during a drag.
+ *
+ * Panel swap (DESIGN.md, Motion): when the index gives way to an entry, or
+ * back, the new contents fade up over --dur-move from the top of the panel.
+ * If focus was in the panel (or was lost with the control that made the
+ * swap), it moves to the new contents' heading, marked `data-panel-focus`.
  */
 export default function MapPanel({ mode, entryKey, onBack, mobileFooter, children }: MapPanelProps) {
   const [sheet, setSheet] = useState<SheetState>("peek");
@@ -45,13 +50,30 @@ export default function MapPanel({ mode, entryKey, onBack, mobileFooter, childre
   const drag = useRef<{ startY: number; startH: number; moved: boolean } | null>(null);
   const suppressClick = useRef(false);
   const bodyId = useId();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // The first contents appear with the page; only later swaps fade.
+  const [swaps, setSwaps] = useState(0);
 
   // A newly selected store opens the sheet at half (or keeps it full);
   // going back to the index drops it to peek.
   if (entryKey !== prevKey) {
     setPrevKey(entryKey);
     setSheet(entryKey ? (sheet === "full" ? "full" : "half") : "peek");
+    setSwaps((n) => n + 1);
   }
+
+  useEffect(() => {
+    if (swaps === 0) return;
+    const body = bodyRef.current;
+    const aside = asideRef.current;
+    if (!body || !aside) return;
+    body.scrollTop = 0;
+    const active = document.activeElement;
+    const focusWasHere = !active || active === document.body || aside.contains(active);
+    if (focusWasHere) {
+      body.querySelector<HTMLElement>("[data-panel-focus]")?.focus({ preventScroll: true });
+    }
+  }, [swaps]);
 
   function cycle() {
     if (suppressClick.current) {
@@ -157,11 +179,17 @@ export default function MapPanel({ mode, entryKey, onBack, mobileFooter, childre
 
       <div
         id={bodyId}
+        ref={bodyRef}
         className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain max-md:group-data-[sheet=peek]/sheet:overflow-hidden"
       >
         {/* Fills the column (or sheet) so an entry's foot sits at the bottom
             instead of the panel ending in dead space. */}
-        <div className="flex flex-1 flex-col px-[1.125rem] pt-4 pb-8 md:px-7 md:pt-5 md:pb-8">{children}</div>
+        <div
+          key={entryKey ?? "index"}
+          className={cn("flex flex-1 flex-col px-[1.125rem] pt-4 pb-8 md:px-7 md:pt-5 md:pb-8", swaps > 0 && "plate-in")}
+        >
+          {children}
+        </div>
         {mobileFooter && <div className="md:hidden">{mobileFooter}</div>}
       </div>
     </aside>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   type ColumnDef,
   flexRender,
@@ -18,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDownIcon, ChevronUpIcon, SortableIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, ChevronUpIcon, LoadingIcon, SortableIcon } from "@/components/ui/icons";
 import { Completeness, Unknown } from "@/components/store/EntryParts";
 import { StatusMark, storeStatuses } from "@/components/admin/StatusMark";
 import { figure, sourceLabel } from "@/components/admin/labels";
@@ -46,7 +47,7 @@ function NameCell({ store }: { store: AdminStoreRow }) {
         {store.name}
       </Link>
       {duplicates.has(store.name) && (
-        <span className="block font-mono text-meta break-all text-ink-faint">{store.slug}</span>
+        <span className="block font-mono text-meta break-all text-ink-quiet">{store.slug}</span>
       )}
       <span className="block text-meta text-ink-dim md:hidden">
         {place || <Unknown>Place not recorded</Unknown>}
@@ -201,18 +202,7 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
     return dupes;
   }, [data]);
 
-  if (data.length === 0) {
-    return (
-      <div className="border-t border-ink-faint pt-4">
-        <p className="font-display text-prose text-ink-dim italic">No stores match these filters.</p>
-        <p className="mt-2 text-ui">
-          <Link href="/admin/stores" className={linkClass}>
-            Clear all filters
-          </Link>
-        </p>
-      </div>
-    );
-  }
+  if (data.length === 0) return <EmptyList />;
 
   const current = sorting[0];
   const sortWords = current ? SORT_WORDS[current.id]?.[current.desc ? 1 : 0] : null;
@@ -223,8 +213,13 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
         <p aria-live="polite" className="text-ui text-ink-dim">
           <span className="font-mono text-ink tabular-nums">{figure(data.length)}</span>{" "}
           {data.length === 1 ? "store" : "stores"} · {sortWords ? `Sorted by ${sortWords}` : "In name order"}
+          {/* Shown by CSS while a filter change is on its way (globals.css, data-stores-list). */}
+          <span data-stores-stale className="font-display text-ink-quiet italic">
+            {" "}
+            · these rows are from the last filter
+          </span>
         </p>
-        <p className="hidden items-center gap-1.5 text-meta text-ink-faint md:flex">
+        <p className="hidden items-center gap-1.5 text-meta text-ink-quiet md:flex">
           <Key>j</Key>
           <Key>k</Key>
           <span>move</span>
@@ -268,7 +263,7 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
                         ) : sorted === "desc" ? (
                           <ChevronDownIcon className="size-3.5 text-moss" strokeWidth={2} />
                         ) : (
-                          <SortableIcon className="size-3.5 text-ink-faint" />
+                          <SortableIcon className="size-3.5 text-ink-quiet" />
                         )}
                       </button>
                     ) : (
@@ -280,7 +275,7 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
             </TableRow>
           ))}
         </TableHeader>
-        <TableBody ref={bodyRef}>
+        <TableBody ref={bodyRef} data-stores-rows>
           {table.getRowModel().rows.map((row) => (
             <TableRow
               key={row.id}
@@ -305,5 +300,88 @@ export function StoresTable({ data }: { data: AdminStoreRow[] }) {
         </TableBody>
       </Table>
     </DuplicateNames.Provider>
+  );
+}
+
+/**
+ * No store matches: the filters stay visible in the bar above, so this
+ * names the way out instead of repeating them. A search combined with other
+ * filters gets "search every store", which keeps the words and drops the rest.
+ */
+function EmptyList() {
+  const params = useSearchParams();
+  const search = params.get("search");
+  const others = Array.from(params.keys()).filter((k) => k !== "search").length;
+
+  return (
+    <div className="border-t-2 border-ink pt-3">
+      <p className="text-ui text-ink">
+        <span className="font-mono tabular-nums">0</span> stores ·{" "}
+        <span className="font-display text-ink-dim italic">no store matches all of the filters above</span>
+      </p>
+      <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-ui">
+        {search && others > 0 && (
+          <Link href={`/admin/stores?${new URLSearchParams({ search })}`} className={linkClass}>
+            Search every store for &ldquo;{search}&rdquo;
+          </Link>
+        )}
+        <Link href="/admin/stores" className={linkClass}>
+          Clear all filters
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/** Column heads for the table, also drawn by the loading frame so nothing moves when rows arrive. */
+export const STORE_COLUMN_HEADS = [
+  { id: "name", label: "Name" },
+  { id: "city", label: "Place" },
+  { id: "data_quality_score", label: "Completeness" },
+  { id: "is_verified", label: "Status" },
+  { id: "source", label: "Source" },
+] as const;
+
+/**
+ * The list while the catalogue is read (the page's Suspense fallback): the
+ * count line and the ruled column heads in place, and one row saying what's
+ * happening. No shimmering placeholder rows.
+ */
+export function StoresTableLoading() {
+  return (
+    <div aria-busy="true">
+      <p className="mb-2 text-ui text-ink-dim">
+        <span className="font-display text-ink-quiet italic">Counting stores…</span>
+      </p>
+      <table className="w-full border-separate border-spacing-0 text-ui">
+        <thead>
+          <tr>
+            {STORE_COLUMN_HEADS.map((col) => (
+              <th
+                key={col.id}
+                scope="col"
+                className={cn(
+                  "border-b-2 border-ink px-3 pt-3 pb-2 text-left text-meta font-medium text-ink-dim",
+                  WIDE_ONLY.has(col.id) && "hidden md:table-cell",
+                  col.id === "name" && "w-[40%]",
+                )}
+              >
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colSpan={STORE_COLUMN_HEADS.length} className="border-b border-line px-3 py-(--row-y)">
+              <span role="status" className="flex items-center gap-2 text-ui text-ink-dim">
+                <LoadingIcon className="size-4 text-moss" />
+                <span className="font-display italic">Reading the catalogue…</span>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }

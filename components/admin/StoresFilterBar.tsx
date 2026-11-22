@@ -185,7 +185,7 @@ export function StoresFilterBar() {
           ]}
         />
         {isPending && (
-          <span role="status" className="inline-flex items-center gap-1.5 text-ui text-ink-dim">
+          <span role="status" data-list-pending className="inline-flex items-center gap-1.5 text-ui text-ink-dim">
             <LoadingIcon className="size-4 text-moss" />
             <span className="font-display italic">Updating…</span>
           </span>

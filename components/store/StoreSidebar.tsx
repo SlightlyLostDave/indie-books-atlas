@@ -10,7 +10,7 @@ import { specialtiesOf } from "@/lib/browse";
 import { displayUrl, formatPhone, provinceName } from "@/lib/format";
 import { directionsUrl, formatCoordinates } from "@/lib/geo";
 import { forgetStoreRecord, loadStoreRecord } from "@/lib/storeRecord";
-import { linkClass } from "@/lib/styles";
+import { creditLinkClass, linkClass } from "@/lib/styles";
 import type { PublicStore, StoreFeatureProperties } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -50,12 +50,14 @@ export default function StoreSidebar({ store, coordinates }: StoreSidebarProps) 
   return (
     <article className="flex flex-1 flex-col">
       <header>
-        <h2 className="font-display text-title font-bold text-balance text-ink">{store.name}</h2>
+        <h2 data-panel-focus tabIndex={-1} className="font-display text-title font-bold text-balance text-ink outline-offset-4">
+          {store.name}
+        </h2>
         <p className="mt-2 font-display text-body text-ink-dim italic">
           {place || <Unknown>Place not yet recorded</Unknown>}
         </p>
         {lat != null && lng != null && (
-          <p className="mt-1 font-mono text-meta text-ink-faint tabular-nums">{formatCoordinates(lat, lng)}</p>
+          <p className="mt-1 font-mono text-meta text-ink-quiet tabular-nums">{formatCoordinates(lat, lng)}</p>
         )}
       </header>
 
@@ -66,13 +68,13 @@ export default function StoreSidebar({ store, coordinates }: StoreSidebarProps) 
         <Details feature={store} coordinates={coordinates} />
       </Suspense>
 
-      <p className="mt-auto pt-10 text-meta text-ink-faint">
+      <p className="mt-auto pt-10 text-meta text-ink-quiet">
         Location and listing data ©{" "}
         <a
           href="https://www.openstreetmap.org/copyright"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-ink-dim no-underline hover:text-moss"
+          className={creditLinkClass}
         >
           OpenStreetMap contributors
         </a>
@@ -103,13 +105,22 @@ function Details({
   const fullEntry = `/stores/${feature.slug}`;
 
   if (result.status !== "ok") {
+    // What the map payload holds is already above; this says what's missing
+    // and why, and offers the two ways on. Announced, since it replaces the
+    // "Reading the entry…" status.
     return (
-      <div className="mt-6 border-t border-ink-faint pt-4 text-ui text-ink-dim">
-        <p>
-          <Unknown className="text-ink-dim">
-            {result.status === "missing" ? "This entry isn't in the public record." : "The entry couldn't be read just now."}
-          </Unknown>
-        </p>
+      <div role="status" className="mt-6 border-t border-ink-faint pt-4 text-ui text-ink-dim">
+        {result.status === "missing" ? (
+          <p>
+            <Unknown className="text-ink-dim">This entry isn&apos;t in the public record any more.</Unknown> It may
+            have been withdrawn since the map loaded.
+          </p>
+        ) : (
+          <p>
+            <Unknown className="text-ink-dim">The rest of this entry didn&apos;t load.</Unknown> Its address, hours and
+            description come from the database, which didn&apos;t answer just now.
+          </p>
+        )}
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           {result.status === "error" && (
             <button

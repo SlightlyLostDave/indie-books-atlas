@@ -30,6 +30,24 @@ import { formatSyncDate } from "@/lib/format";
 import type { AdminStoreRow } from "@/lib/admin/types";
 
 type ActionResult = { success: boolean; error?: string };
+type ActionKey = "verified" | "review" | "closed" | "deleted";
+
+/**
+ * A failed action, under the control it came from. It stays until that
+ * action is tried again, so it outlasts the toast, and it says nothing
+ * changed: a status action that might have half-happened is the worst reading.
+ */
+function NotChanged({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="border-l-2 border-danger pl-2 text-meta text-ink-dim">
+      <span className="font-medium text-danger">
+        <span aria-hidden="true">× </span>Not changed.
+      </span>{" "}
+      {message}
+    </p>
+  );
+}
 
 /** One action in the panel: what it does in a sentence, then the control. */
 function ActionRow({ children }: { children: ReactNode }) {
@@ -101,19 +119,30 @@ function ConfirmAction({
 export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [failed, setFailed] = useState<{ key: ActionKey; message: string } | null>(null);
+  const failure = (key: ActionKey) => (failed?.key === key ? failed.message : null);
 
   function run(
+    key: ActionKey,
     action: () => Promise<ActionResult>,
     success: { title: string; description?: string },
-    failure: string,
+    failureTitle: string,
   ) {
+    setFailed(null);
     startTransition(async () => {
-      const result = await action();
+      let result: ActionResult;
+      try {
+        result = await action();
+      } catch {
+        result = { success: false, error: "The server didn't answer. Check the connection and try again." };
+      }
       if (result.success) {
         toast.success(success.title, success.description ? { description: success.description } : undefined);
         router.refresh();
       } else {
-        toast.error(failure, { description: result.error ?? "No reason was given.", duration: 10000 });
+        const message = result.error || "No reason was given.";
+        setFailed({ key, message });
+        toast.error(failureTitle, { description: `${message} Nothing was changed.`, duration: 10000 });
       }
     });
   }
@@ -140,6 +169,7 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                 disabled={isPending}
                 onCheckedChange={(checked) =>
                   run(
+                    "verified",
                     () => toggleVerifiedAction(store.slug, checked),
                     { title: checked ? "Marked verified" : "Marked unverified" },
                     "Couldn't change verification",
@@ -150,6 +180,7 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
             <p id="verified-note" className="text-meta text-ink-dim">
               Saves as soon as it&apos;s switched. Verification adds 20 to completeness.
             </p>
+            <NotChanged message={failure("verified")} />
           </ActionRow>
 
           <ActionRow>
@@ -166,6 +197,7 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                   disabled={isPending}
                   onClick={() =>
                     run(
+                      "review",
                       () => clearNeedsReviewAction(store.slug),
                       { title: "Review flag cleared" },
                       "Couldn't clear the review flag",
@@ -174,9 +206,10 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                 >
                   Clear the review flag
                 </Button>
+                <NotChanged message={failure("review")} />
               </>
             ) : (
-              <p className="font-display text-ui text-ink-faint italic">No review flag.</p>
+              <p className="font-display text-ui text-ink-quiet italic">No review flag.</p>
             )}
           </ActionRow>
         </div>
@@ -219,12 +252,14 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                   disabled={isPending}
                   onConfirm={() =>
                     run(
+                      "closed",
                       () => setPermanentlyClosedAction(store.slug, { value: true }),
                       { title: "Marked permanently closed" },
                       "Couldn't mark the store closed",
                     )
                   }
                 />
+                <NotChanged message={failure("closed")} />
               </>
             )}
           </ActionRow>
@@ -246,11 +281,12 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                   size="sm"
                   disabled={isPending}
                   onClick={() =>
-                    run(() => restoreStoreAction(store.slug), { title: "Store restored" }, "Couldn't restore the store")
+                    run("deleted", () => restoreStoreAction(store.slug), { title: "Store restored" }, "Couldn't restore the store")
                   }
                 >
                   Restore store
                 </Button>
+                <NotChanged message={failure("deleted")} />
               </>
             ) : (
               <>
@@ -278,12 +314,14 @@ export function StoreStatusActions({ store }: { store: AdminStoreRow }) {
                   disabled={isPending}
                   onConfirm={() =>
                     run(
+                      "deleted",
                       () => softDeleteStoreAction(store.slug),
                       { title: "Store deleted", description: "It can be restored from this page." },
                       "Couldn't delete the store",
                     )
                   }
                 />
+                <NotChanged message={failure("deleted")} />
               </>
             )}
           </ActionRow>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useForm, useWatch, Controller, type Control, type FieldError as RHFFieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -46,7 +46,7 @@ function Label({ htmlFor, children, required = false }: { htmlFor?: string; chil
   return (
     <FieldLabel htmlFor={htmlFor} className="flex-col items-start gap-0 text-ui text-ink">
       <span>{children}</span>
-      <span className={cn("font-display text-meta italic", required ? "text-ink-dim" : "text-ink-faint")}>
+      <span className={cn("font-display text-meta italic", required ? "text-ink-dim" : "text-ink-quiet")}>
         {required ? "required" : "optional"}
       </span>
     </FieldLabel>
@@ -161,7 +161,7 @@ function RecordGaps({ control, store }: { control: Control<StoreEditInput>; stor
                 <Unknown>
                   {row.key === "is_verified" ? "Not verified" : row.was ? "Removed, not saved" : "Not recorded"}
                 </Unknown>
-                <span className="w-7 text-right font-mono text-meta text-ink-faint tabular-nums">+{row.points}</span>
+                <span className="w-7 text-right font-mono text-meta text-ink-quiet tabular-nums">+{row.points}</span>
               </span>
             </li>
           ))}
@@ -180,7 +180,7 @@ function RecordGaps({ control, store }: { control: Control<StoreEditInput>; stor
           group.length > 0 && (
             <p key={lead} className="mt-3 flex items-baseline gap-1.5 text-ui text-ink-dim">
               <CheckIcon
-                className={cn("size-3.5 translate-y-0.5", lead === "Recorded" ? "text-moss" : "text-ink-faint")}
+                className={cn("size-3.5 translate-y-0.5", lead === "Recorded" ? "text-moss" : "text-ink-quiet")}
                 strokeWidth={2}
               />
               <span>
@@ -198,15 +198,21 @@ function RecordGaps({ control, store }: { control: Control<StoreEditInput>; stor
       )}
 
       {missing.some((r) => r.key === "is_verified") && (
-        <p className="mt-3 text-meta text-ink-faint">Verification is set under Status, not in the form.</p>
+        <p className="mt-3 text-meta text-ink-quiet">Verification is set under Status, not in the form.</p>
       )}
     </section>
   );
 }
 
+/** What the save bar says when the server action throws instead of answering. */
+const NO_ANSWER = "The server didn't answer. Check the connection and try again.";
+
 export function StoreEditForm({ store, aside }: { store: AdminStoreRow; aside?: ReactNode }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  // The last save's failure, kept in the save bar until the next attempt so
+  // it can't be missed when the toast times out.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const {
     register,
@@ -230,13 +236,24 @@ export function StoreEditForm({ store, aside }: { store: AdminStoreRow; aside?: 
   });
 
   function onSubmit(values: StoreEditInput) {
+    setSaveError(null);
     startTransition(async () => {
-      const result = await updateStoreAction(store.slug, values);
+      let result: { success: boolean; error?: string };
+      try {
+        result = await updateStoreAction(store.slug, values);
+      } catch {
+        result = { success: false, error: NO_ANSWER };
+      }
       if (result.success) {
         toast.success("Changes saved");
         router.refresh();
       } else {
-        toast.error("Couldn't save the changes", { description: result.error, duration: 10000 });
+        const reason = result.error || "No reason was given.";
+        setSaveError(reason);
+        toast.error("Couldn't save the changes", {
+          description: `${reason} Your edits are still in the form.`,
+          duration: 10000,
+        });
       }
     });
   }
@@ -390,21 +407,33 @@ export function StoreEditForm({ store, aside }: { store: AdminStoreRow; aside?: 
         </div>
 
         {/* The save bar: the plate rule above it, pinned to the foot while the form scrolls. */}
-        <div className="sticky bottom-0 z-10 mt-(--gap-section) flex flex-wrap items-center justify-between gap-3 border-t-2 border-ink bg-bg py-3">
-          <p aria-live="polite" className="text-ui">
+        <div
+          className={cn(
+            "sticky bottom-0 z-10 mt-(--gap-section) flex flex-wrap items-center justify-between gap-3 border-t-2 bg-bg py-3",
+            saveError && !isPending ? "border-danger" : "border-ink",
+          )}
+        >
+          <p aria-live="polite" className="min-w-0 flex-1 text-ui">
             {errorCount > 0 ? (
               <span className="text-danger">
                 <span aria-hidden="true">× </span>
                 {errorCount === 1 ? "One field needs attention." : `${errorCount} fields need attention.`}
               </span>
+            ) : saveError && !isPending ? (
+              <>
+                <span className="font-medium text-danger">
+                  <span aria-hidden="true">× </span>Not saved.
+                </span>{" "}
+                <span className="text-ink-dim">{saveError} Your edits are still in the form.</span>
+              </>
             ) : isDirty ? (
               <span className="text-ink">Unsaved changes.</span>
             ) : (
-              <span className="font-display text-ink-faint italic">No unsaved changes.</span>
+              <span className="font-display text-ink-quiet italic">No unsaved changes.</span>
             )}
           </p>
           <Button type="submit" disabled={isPending || !isDirty}>
-            {isPending ? "Saving…" : "Save changes"}
+            {isPending ? "Saving…" : saveError ? "Try saving again" : "Save changes"}
           </Button>
         </div>
       </form>

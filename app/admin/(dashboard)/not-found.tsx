@@ -9,7 +9,7 @@ import { linkClass } from "@/lib/styles";
 export default function AdminNotFound() {
   return (
     <article className="grid max-w-4xl gap-x-10 gap-y-2 lg:grid-cols-[8rem_minmax(0,1fr)]">
-      <p className="font-display text-ui text-ink-faint italic lg:pt-2">
+      <p className="font-display text-ui text-ink-quiet italic lg:pt-2">
         No entry <span className="font-mono not-italic">404</span>
       </p>
       <div className="min-w-0 max-w-[38rem]">

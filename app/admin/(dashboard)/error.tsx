@@ -20,7 +20,7 @@ export default function AdminError({
 }) {
   return (
     <article className="grid max-w-4xl gap-x-10 gap-y-2 lg:grid-cols-[8rem_minmax(0,1fr)]">
-      <p className="font-display text-ui text-ink-faint italic lg:pt-2">Didn&apos;t load</p>
+      <p className="font-display text-ui text-ink-quiet italic lg:pt-2">Didn&apos;t load</p>
       <div className="min-w-0 max-w-[38rem]">
         <h1 className="font-display text-title font-bold text-ink">This page couldn&apos;t be read</h1>
         <p className="mt-3 border-t-2 border-ink pt-3 text-body text-ink-dim">

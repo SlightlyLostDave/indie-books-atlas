@@ -72,7 +72,7 @@ export default async function AdminStoreDetailPage({ params }: PageProps) {
           <span>
             Source: <span className="text-ink">{sourceLabel(store.source)}</span>
           </span>
-          <span className="font-mono text-meta text-ink-faint">{store.slug}</span>
+          <span className="font-mono text-meta text-ink-quiet">{store.slug}</span>
           {!store.is_deleted && (
             <a href={`/stores/${store.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass}>
               Public page ↗

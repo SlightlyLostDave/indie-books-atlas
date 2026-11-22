@@ -348,6 +348,11 @@ export interface AtlasStyleExtras {
   sources?: Record<string, SourceSpecification>;
   /** Layers drawn above the basemap, labels included. */
   layers?: LayerSpecification[];
+  /**
+   * How long paint changes take when the style is diffed in, i.e. a theme
+   * switch (DESIGN.md, Motion). 0 snaps. Mapbox's own default is 300ms.
+   */
+  paintTransitionMs?: number;
 }
 
 /**
@@ -414,6 +419,7 @@ export function buildAtlasStyle(
       ...extras.sources,
     },
     layers: [...layers, ...(extras.layers ?? [])],
+    transition: { duration: extras.paintTransitionMs ?? 0, delay: 0 },
   };
   // Atmosphere belongs to the globe; a printed plate has none.
   delete style.fog;

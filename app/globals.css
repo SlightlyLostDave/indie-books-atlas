@@ -56,6 +56,15 @@
 
   /* ---- Design system tokens (docs/design/DESIGN.md). No new hues. ---- */
   --scrim: color-mix(in srgb, var(--bg) 82%, transparent);
+  /* Small text that must still be read (notes, unknowns, marginal labels):
+     a tint between ink-dim and ink-faint that holds 4.5:1 on bg, bg-raised
+     and bg-step in both themes. ink-faint itself (3.2 to 3.9:1) is kept for
+     rules, neatlines, control borders and disabled text. */
+  --ink-quiet: color-mix(in srgb, var(--ink-faint) 40%, var(--ink-dim));
+  /* Primary hover. In dark, bg text on moss-deep is 3.65:1, so the fill
+     stays moss and the border goes to ink; light darkens to moss-deep. */
+  --primary-hover: var(--moss);
+  --primary-hover-line: var(--ink);
 
   /* Type sizes, comfortable density */
   --fs-label: 0.6875rem;
@@ -79,9 +88,11 @@
   --gap-section: 4rem;
   --gutter: 2rem;
 
-  /* Motion */
+  /* Motion (DESIGN.md, Motion): four transitions, nothing else moves.
+     --dur-camera is the cap on a fly-to; the map reads it at runtime. */
   --dur-quick: 120ms;
   --dur-move: 200ms;
+  --dur-camera: 1400ms;
   --ease-plate: cubic-bezier(0.2, 0, 0, 1);
 
   /* Plate frame (home): outer neatline inset, margin band, foot band */
@@ -126,6 +137,14 @@
   --gutter: 1.5rem;
 }
 
+/* The admin is a work tool: state changes are instant (DESIGN.md, Motion).
+   Set on :root via :has() so dialogs and toasts, which portal to <body>
+   outside the compact root, are instant too. */
+:root:has([data-density="compact"]) {
+  --dur-quick: 0ms;
+  --dur-move: 0ms;
+}
+
 :root.light {
   --bg: #f6f1e7;
   --bg-raised: #fffdf9;
@@ -141,6 +160,9 @@
   --amber-line: rgba(169, 112, 31, 0.4);
   --danger: #9e3f22;
   --info: #2e5a53;
+
+  --primary-hover: var(--moss-deep);
+  --primary-hover-line: var(--moss-deep);
 }
 
 @theme inline {
@@ -152,6 +174,7 @@
   --color-ink: var(--ink);
   --color-ink-dim: var(--ink-dim);
   --color-ink-faint: var(--ink-faint);
+  --color-ink-quiet: var(--ink-quiet);
   --color-moss: var(--moss);
   --color-moss-deep: var(--moss-deep);
   --color-amber: var(--amber);
@@ -161,7 +184,6 @@
   --font-display: var(--font-playfair);
   --font-sans: var(--font-jost);
   --font-mono: var(--font-plex-mono);
-  --font-eyebrow: var(--font-cinzel);
   --color-danger: var(--danger);
   --color-info: var(--info);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -240,32 +262,6 @@ body {
   font-family: var(--font-sans);
 }
 
-@keyframes loading-bar-sweep {
-  0% {
-    transform: translateX(-100%) scaleX(0.4);
-  }
-  50% {
-    transform: translateX(20%) scaleX(0.6);
-  }
-  100% {
-    transform: translateX(120%) scaleX(0.4);
-  }
-}
-
-.loading-bar-track {
-  position: relative;
-  overflow: hidden;
-  background: var(--line);
-}
-
-.loading-bar-fill {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  background: var(--moss);
-  animation: loading-bar-sweep 1.6s ease-in-out infinite;
-}
-
 /* Home bottom sheet heights (components/layout/MapPanel.tsx). Mobile only:
    md:h-auto overrides them on desktop. */
 [data-sheet="peek"] {
@@ -318,9 +314,80 @@ body {
   border-radius: 0;
 }
 
+/* ---- Motion (DESIGN.md, Motion) ---- */
+
+/* 1. Panel swap: the incoming index or entry fades up from the panel
+   ground. Nothing slides; the sheet's height has its own transition. */
+@keyframes plate-in {
+  from {
+    opacity: 0;
+  }
+}
+.plate-in {
+  animation: plate-in var(--dur-move) var(--ease-plate) both;
+}
+
+/* 4. Theme switch: one crossfade of the whole page (View Transitions,
+   lib/useTheme.ts). The map then diffs its own paint over the same
+   duration. Compact density sets --dur-move to 0, so the admin snaps. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-plate);
+}
+
+/* Sonner's own slide and fade, off in the admin, where a toast appears
+   in place (DESIGN.md, Motion). */
+:root:has([data-density="compact"]) [data-sonner-toast] {
+  transition: none !important;
+}
+
+/* Admin stores list: while a filter change is on its way, the rows on
+   screen are stale. They drop to ink-quiet (never an opacity fade) and the
+   count line says so. No motion: the change is instant both ways. */
+[data-stores-stale] {
+  display: none;
+}
+[data-stores-list]:has([data-list-pending]) [data-stores-stale] {
+  display: inline;
+}
+[data-stores-list]:has([data-list-pending]) [data-stores-rows] :is(a, span, p) {
+  color: var(--ink-quiet);
+}
+
+/* Mapbox focus: the system's square moss outline, inside the canvas edge
+   (the plate clips anything outside it), and no blue glow on its buttons. */
+.mapboxgl-map .mapboxgl-canvas:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.mapboxgl-map .mapboxgl-ctrl-attrib-button:focus,
+.mapboxgl-map .mapboxgl-ctrl-group button:focus {
+  box-shadow: none;
+}
+.mapboxgl-map .mapboxgl-ctrl-attrib-button:focus-visible,
+.mapboxgl-map .mapboxgl-ctrl-attrib a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring;
+    /* Scrollbars as hairlines in the palette, not the OS's grey bar
+       (the index panel, the sheet, the admin rail and tables). */
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-faint) transparent;
+  }
+  /* Selected text in moss, not the OS's blue. */
+  ::selection {
+    background: color-mix(in srgb, var(--moss) 34%, transparent);
+    color: var(--ink);
+  }
+  /* The browser's own clear glyph in search fields: the atlas has its own
+     Clear (Find) and Esc (the admin search). */
+  input[type="search"]::-webkit-search-cancel-button {
+    appearance: none;
   }
   :focus-visible {
     outline: 2px solid var(--ring);

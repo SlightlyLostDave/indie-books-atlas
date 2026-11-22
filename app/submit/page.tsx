@@ -87,7 +87,7 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
   return (
     <PageShell crumbs={crumbs}>
       <main className="mx-auto w-full max-w-3xl flex-1 px-(--gutter) pt-10 pb-16 md:pt-16">
-        <p className="font-display text-ui text-ink-faint italic">Contribute</p>
+        <p className="font-display text-ui text-ink-quiet italic">Contribute</p>
         <h1 className="mt-1 font-display text-page font-bold text-balance text-ink">
           {store ? "Suggest a correction" : "Suggest a correction or a store"}
         </h1>
@@ -123,7 +123,7 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
                 <p className="font-display text-ui text-ink-dim italic">Correction to the entry for</p>
                 <p className="mt-1 font-display text-heading font-bold text-ink">{store.name}</p>
                 <p className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-ui">
-                  <span className="font-mono text-meta text-ink-faint">{store.slug}</span>
+                  <span className="font-mono text-meta text-ink-quiet">{store.slug}</span>
                   <Link href={`/stores/${encodeURIComponent(store.slug)}`} className={linkClass}>
                     View the entry
                   </Link>
@@ -135,11 +135,13 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
           </div>
 
           {/* The honest stub state, before anyone types */}
-          <p id="slip-status" className="flex gap-2.5 border-b border-line bg-bg-step px-5 py-3 text-ui text-ink-dim sm:px-6">
-            <InfoMark className="mt-0.5 size-4 text-ink-faint" />
+          {/* bg, not bg-step: moss link text on light bg-step is 4.33:1, under AA. */}
+          <p id="slip-status" className="flex gap-2.5 border-b border-line bg-bg px-5 py-3 text-ui text-ink-dim sm:px-6">
+            <InfoMark className="mt-0.5 size-4 text-ink-quiet" />
             <span>
-              <span className="font-medium text-ink">This form doesn&apos;t send yet.</span> Submissions open
-              soon; until then nothing typed here is saved or sent. For a location fix,{" "}
+              <span className="font-medium text-ink">This form doesn&apos;t send yet.</span> Sending is planned: it
+              waits on the review queue being set up. Until then, nothing typed here is saved or sent. For a
+              location fix,{" "}
               <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer" className={linkClass}>
                 editing OpenStreetMap ↗
               </a>{" "}
@@ -189,7 +191,7 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
 
               <Field orientation="responsive">
                 <FieldLabel htmlFor="email">
-                  Your email <span className="font-display text-ink-faint italic">optional</span>
+                  Your email <span className="font-display text-ink-quiet italic">optional</span>
                 </FieldLabel>
                 <FieldContent>
                   <Input id="email" name="email" type="email" autoComplete="email" />
@@ -204,7 +206,7 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
             <Button type="submit" disabled>
               Send suggestion
             </Button>
-            <span className="font-display text-ui text-ink-faint italic">Sending is planned, not yet switched on.</span>
+            <span className="font-display text-ui text-ink-quiet italic">Sending is planned, not yet switched on.</span>
           </div>
         </form>
       </main>

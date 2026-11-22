@@ -45,7 +45,7 @@ export function CreditLinks({ className }: { className?: string }) {
 }
 
 export function Imprint({ className }: { className?: string }) {
-  return <p className={cn("text-ink-faint", className)}>© {YEAR} Indie Books Atlas</p>;
+  return <p className={cn("text-ink-quiet", className)}>© {YEAR} Indie Books Atlas</p>;
 }
 
 /** The page shell's colophon, under a neatline. */

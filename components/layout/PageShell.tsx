@@ -43,7 +43,7 @@ export default function PageShell({ crumbs = [], children }: PageShellProps) {
             aria-label="Breadcrumb"
             className="order-last w-full min-w-0 md:order-none md:w-auto md:flex-1"
           >
-            <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-ui text-ink-faint">
+            <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-ui text-ink-quiet">
               <li className="flex items-center">
                 <Link
                   href="/"

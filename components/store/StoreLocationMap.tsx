@@ -10,6 +10,7 @@ import { loadBoundary } from "@/lib/map/boundary";
 import { isAtlasSymbol, registerSymbols } from "@/lib/map/symbols";
 import { SELECTION_SOURCE, locationLayers, selectionData } from "@/lib/map/storeLayers";
 import { useTheme } from "@/lib/useTheme";
+import { motionMs } from "@/lib/motion";
 
 interface StoreLocationMapProps {
   lat: number;
@@ -54,6 +55,7 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
     containerRef.current?.style.setProperty("background-color", palette.water);
     const { lat, lng, name } = pointRef.current;
     return buildAtlasStyle(base, palette, boundary, {
+      paintTransitionMs: motionMs("--dur-move"),
       sources: {
         [SELECTION_SOURCE]: {
           type: "geojson",
@@ -95,6 +97,8 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
           pitchWithRotate: false,
           touchPitch: false,
           attributionControl: false,
+          // The canvas's accessible name (Mapbox labels it "Map" by default).
+          locale: { "Map.Title": `Location of ${pointRef.current.name}. Arrow keys pan, plus and minus zoom.` },
         });
         map.touchZoomRotate.disableRotation();
         map.addControl(new mapboxgl.ScaleControl({ maxWidth: 88, unit: "metric" }), "bottom-left");
@@ -130,16 +134,12 @@ export default function StoreLocationMap({ lat, lng, name }: StoreLocationMapPro
   if (!token) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-bg-step">
-        <span className="font-display text-ui text-ink-faint italic">Map unavailable</span>
+        <span className="font-display text-ui text-ink-quiet italic">Map unavailable</span>
       </div>
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full"
-      aria-label={`Map showing the location of ${name}`}
-    />
+    <div ref={containerRef} className="h-full w-full" />
   );
 }

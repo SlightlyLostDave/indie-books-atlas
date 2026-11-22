@@ -10,7 +10,7 @@ This file is the contract for UI work. [BRIEF.md](./BRIEF.md) sets the guardrail
 2. **Print, not screen.** Square corners, hairline rules, flat tone. Layers separate by a rule and a tone step, never by a shadow, glow, blur or gradient.
 3. **One job per typeface.** Playfair names things and speaks in the margins. Jost is for reading and doing. Plex Mono is for figures only: counts, coordinates, grid references and dates. Sentence case everywhere. Tracked capitals are kept for political labels on the map and the imprint line.
 4. **Amber once per layout.** Moss carries structure, links and primary actions. Amber marks the one thing that matters on the screen: the selected store, the located point, or the review flag.
-5. **Absence reads as absence.** An unknown value is set in Playfair italic in `ink-faint` ("Not recorded"), never as an em dash, a zero or an alarm. A sparse record should look like a short entry, not an empty layout.
+5. **Absence reads as absence.** An unknown value is set in Playfair italic in `ink-quiet` ("Not recorded"), never as an em dash, a zero or an alarm. A sparse record should look like a short entry, not an empty layout.
 
 ## Colour
 
@@ -21,9 +21,11 @@ Colour hexes are locked (BRIEF 2.1). Both themes flip through `:root` and `:root
 | `bg` | Page and plate ground, and field wells |
 | `bg-raised` | Panels, title block, popovers and dialogs (one tone step up) |
 | `bg-step` | Hover, the selected row, the current nav item, `code` |
-| `ink`, `ink-dim`, `ink-faint` | Text, secondary text, and labels, unknowns and the strong hairline |
+| `ink`, `ink-dim` | Text and secondary text |
+| `ink-quiet` | Small text that must still be read: notes, unknowns ("Not recorded"), marginal labels, placeholders. A `color-mix()` of 40% `ink-faint` into `ink-dim` that holds 4.5:1 on every ground in both themes |
+| `ink-faint` | Not for reading text: neatlines, the strong hairline, field borders and disabled text. It is 3.2 to 3.9:1, which passes 3:1 for non-text and fails 4.5:1 for text |
 | `moss` | Links, primary actions, focus, checked states and the current-section rule |
-| `moss-deep` | Primary hover |
+| `moss-deep` | Primary hover, light theme only (`--primary-hover`). In dark, `bg` on `moss-deep` is 3.65:1, so the dark primary hover keeps the moss fill and turns its border `ink` |
 | `amber` | One highlight per layout (principle 4). Never link text |
 | `line`, `line-strong` | Row rules, and control borders |
 | `danger` | Destructive actions, invalid fields and the closed status |
@@ -93,7 +95,8 @@ Hierarchy comes from unequal spacing. Keep more space above a heading than below
 | Rule | Spec | Job |
 |---|---|---|
 | Row hairline | 1px `line` | Between rows, list items and table rows |
-| Control border | 1px `line-strong` | Inputs, buttons (outline) and the switch track |
+| Field border | 1px `ink-faint` | Inputs, textareas, select triggers, checkboxes, the switch track and the Find line. The border is what identifies a field, so it needs 3:1 (WCAG 1.4.11); `line-strong` is only 1.5 to 1.7:1 |
+| Control border | 1px `line-strong` | Outline buttons and segmented controls, whose words identify them |
 | Neatline | 1px `ink-faint` | Plate frame, panel edges, running heads and the dialog border |
 | Plate rule | 2px `ink` | Under a title block or entry header, and above a save bar |
 | Double rule | 3px double `ink-faint` | Above a withdrawal (destructive) zone |
@@ -115,7 +118,7 @@ There are no shadows. All shadow and blur tokens are reset in `globals.css`.
 
 - **Focus**: a 2px solid `moss` outline (`--ring`), offset 2px, square. Fields draw it at an offset of -1px, so it sits on the border.
 - **Hover**: borders go to `moss`, ghost surfaces to `bg-step`, and links thicken their underline. There's no colour fade on text.
-- **Disabled**: `ink-faint` text and a `line-strong` border on a transparent ground. Never fade by opacity: a 50% fade drops below readable contrast (AUDIT F-BROWSE-1).
+- **Disabled**: `ink-faint` text and a `line-strong` border on a transparent ground (WCAG exempts inactive controls from the text minimum; `ink-faint` is what marks them as inactive). Never fade by opacity: a 50% fade drops below readable contrast (AUDIT F-BROWSE-1).
 - **Invalid**: a `danger` border, a `danger` focus outline and a `text-meta` message in `danger` under the field.
 - **Current** (nav, selected row): a 2px `moss` rule on the leading edge plus `bg-step`, and `font-medium`. Never colour alone.
 - **Links**: `moss` text with a 1px underline in `line-strong`, offset 3px. Hovering turns the underline `currentColor`. Never amber, never mono caps.
@@ -132,17 +135,82 @@ There are no shadows. All shadow and blur tokens are reset in `globals.css`.
 
 ## Motion
 
-- Motion explains a change of state and nothing else. Nothing loops except the loading trace.
-- **Durations**: `--dur-quick` 120ms for hover, the switch thumb and fades. `--dur-move` 200ms for the bottom sheet and panel swaps. Map camera moves use Mapbox `easeTo` at its default duration.
-- **Easing**: `--ease-plate` `cubic-bezier(0.2, 0, 0, 1)`.
+Motion explains a change of state and nothing else. There are four transitions, listed below, plus the loading trace, which is the only thing that loops. Anything not listed doesn't move: no hover scale, no bounce, no staggered entrances, no counting-up figures.
+
+### Tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--dur-quick` | 120ms | Hover colour, the switch thumb, overlay fades |
+| `--dur-move` | 200ms | Panel swap, the bottom sheet, the theme crossfade |
+| `--dur-camera` | 1400ms | The cap on a map camera move (a fly-to); shorter moves are fractions of it |
+| `--ease-plate` | `cubic-bezier(0.2, 0, 0, 1)` | Everything that moves |
+
+Code that animates outside CSS (the Mapbox camera and paint) reads these through [lib/motion.ts](../../lib/motion.ts), so reduced motion and density apply there too.
+
+### The four transitions
+
+| Transition | What moves | How |
+|---|---|---|
+| 1. Panel open and close | The index panel's contents | When the index gives way to a store entry, or back, the new contents fade up over `--dur-move` (`.plate-in`). Nothing slides. The panel scrolls to its top, and if focus was in the panel it moves to the new heading. On mobile the sheet's height eases over `--dur-move`. The first contents of a page don't fade. |
+| 2. Store select, with fly-to | The map camera | From the index, the camera travels to the store. If it's already on screen at zoom 9 or closer, it eases (`--dur-camera` × 0.45). Otherwise it flies, out and back in (`flyTo`, `--dur-camera`), so the reader sees where in the country the store is. The selected symbol appears at once, with no pulse. A click on the map selects without moving the camera. |
+| 3. Filter change | The map camera, sometimes | Choosing a province turns to its regional plate: the camera fits the province's stores (2nd to 98th percentile, so one misplaced point can't stretch it) over `--dur-camera` × 0.6. "All of Canada" and "Unplaced" turn back to the national plate. Search and specialty filters move nothing: the points redraw in one frame and the counts change in place. |
+| 4. Theme switch | The whole page | One crossfade over `--dur-move` (View Transitions, in [lib/useTheme.ts](../../lib/useTheme.ts)), while the map diffs its new palette in over the same duration (the style's `transition`). Browsers without View Transitions swap at once. |
+
+### Reduced motion and the admin
+
+- `prefers-reduced-motion: reduce` removes every CSS transition and animation, the sheet snaps, the theme swaps without a crossfade, and every camera move becomes a jump (`jumpTo`). The loading trace stops, as a static segment.
+- **The admin has no motion.** Compact density sets `--dur-quick` and `--dur-move` to 0 on `:root` (through `:has()`, so dialogs and toasts portalled to `<body>` get it too), and sonner's slide is turned off. Dialogs, toasts, the switch and hover all change state instantly. The one exception is the loading trace, which says work is in progress.
 - Overlays fade only. No zoom-in, no slide-in-from, no press-nudge (`translate-y-px`).
-- `prefers-reduced-motion: reduce` removes all transitions and animations, and the sheet snaps.
+
+## States
+
+Every state is set in the direction's voice: a short entry with a marginal note, the head, a sentence under the plate rule, and the ways on. **Never the centred icon, heading and subtext template.** A state says what happened, what still works, and what to do, in that order. A failure never shows the raw error message (the digest is shown, for matching logs).
+
+| State | Where | Treatment |
+|---|---|---|
+| Page loading | [app/loading.tsx](../../app/loading.tsx) | The plate itself, drawn in place: frame, title block (legend line reads *counting the stores…*), and the index column with one status line. Nothing moves when the map arrives. Content routes use [ShellLoading](../../components/layout/ShellLoading.tsx) (the page shell and one status line) so they never flash the plate. |
+| Page error | [app/error.tsx](../../app/error.tsx) | The page shell, marginal *Didn't load*, "This page didn't load", what it means, the digest, Try again and ← Back to Plate 1. |
+| No such page | [app/not-found.tsx](../../app/not-found.tsx), the store not-found | [NoEntry](../../components/layout/NoEntry.tsx): marginal *No entry 404*, the head, a sentence, and the way on. |
+| Store layer failed | Home ([StoresUnavailable](../../components/map/StoresUnavailable.tsx)) | **A failed load never looks like an empty atlas.** The legend line reads *stores not loaded*, never a zero; the index panel says the stores didn't load, that nothing was removed, and offers Try again (a server refresh). `getStoresGeoJSON` returns `null` on a failed query (and the API route a 503), so a failure is never an empty collection. |
+| Zero filter results | Index panel | Says where it looked ("No store or town in Quebec matches…"), how many match elsewhere, and offers Search all of Canada and Suggest a store. The legend line reads *none of 852 shown*. |
+| Entry didn't load | Store entry in the panel | What the map knows stays; a line under it says the rest (address, hours, description) didn't load, with Try again and Open the full entry. |
+| Sync date unknown | [DataFreshness](../../components/layout/DataFreshness.tsx) | The sentence keeps its shape: "Store data last synced: *date not available just now*". It never guesses a date or claims a schedule. |
+| Form not live | /submit | Says plainly that it doesn't send, what it's waiting on, and what works today (editing OpenStreetMap). |
+| Empty filtered list | Admin stores | The count line reads 0, and offers Search every store (when a search is combined with other filters) and Clear all filters. The filters themselves stay in the bar above. |
+| Slow list | Admin stores | First load: the ruled column heads in place and one row, *Reading the catalogue…*. A filter change on its way: the rows on screen turn `ink-quiet` and the count line adds *these rows are from the last filter*. Instant, both ways. |
+| Failed save or status action | Admin store page | A toast (danger top rule) **and** an inline line that outlasts it: the save bar's rule turns danger and reads "× Not saved." with the reason; a failed status action gets "× Not changed." under its control. Both say nothing was changed. |
+| Admin error | [admin error.tsx](../../app/admin/(dashboard)/error.tsx) | The office shell, a short entry, the digest, and the message behind a disclosure for development. |
 
 ## Density
 
 The admin is the same system at the **compact** setting: `data-density="compact"` on the admin root (`app/admin/(dashboard)/layout.tsx`). It retunes the `--fs-*` sizes, control heights, row padding and gaps listed above. Families, colours, rules and radius don't change. Primitives read only the tokens, so every primitive works in both densities without a prop.
 
 Comfortable is the default everywhere else. Don't set density per component. If a public surface needs to be tighter, it uses a smaller role token instead.
+
+## Accessibility
+
+- **Contrast** (WCAG AA, checked in both themes; density changes sizes, not colours, and no compact size reaches the large-text threshold, so every text pair must meet 4.5:1 there):
+
+| Pair | Dark | Light |
+|---|---|---|
+| `ink` on `bg` / `bg-raised` / `bg-step` | 15.27 / 14.40 / 14.92 | 14.54 / 16.12 / 13.43 |
+| `ink-dim` on the same | 7.38 / 6.96 / 7.21 | 6.73 / 7.45 / 6.21 |
+| `ink-quiet` on the same | 5.72 / 5.40 / 5.59 | 5.11 / 5.66 / 4.72 |
+| `moss` (links) on the same | 6.07 / 5.72 / 5.93 | 4.69 / 5.19 / **4.33** |
+| `danger` on the same | 4.80 / 4.52 / 4.69 | 5.85 / 6.48 / 5.40 |
+| `bg` on `moss` (primary button) | 6.07 | 4.69 |
+| `bg` on `moss-deep` (light primary hover) | not used | 6.50 |
+| `ink-faint` (field borders, rules) on `bg` | 3.77 (non-text, 3:1) | 3.50 |
+| `amber` (review mark, a glyph) on `bg` | 7.82 | 3.71 (non-text, 3:1) |
+
+  Moss link text on light `bg-step` is 4.33:1, so links never sit on `bg-step` (the /submit notice uses `bg`). Hover and focus rows that are `bg-step` carry `ink` text.
+- **Focus**: every interactive element shows the 2px square moss outline (4.3:1 or better against every ground; 3:1 is the bar for a focus indicator). The map canvas draws it inset, since the plate clips anything outside. Programmatic focus on a heading (after a panel swap) uses the same outline, offset 4px, and only appears for keyboard users.
+- **Keyboard**: the province index is a native radio group (arrow keys move and choose) and specialties are checkboxes. In Find, Enter opens the top match and the down arrow moves into the matches. Escape returns from an entry to the index. The admin table moves with j and k, opens with Enter, and / jumps to search.
+- **Labels**: the map canvas is named for what it is and how to use it ("Map of Canada's independent bookstores. Arrow keys pan, plus and minus zoom. The index panel lists every store on the map."), through Mapbox's `locale`. The index panel is the accessible way to every store; points on the map are not reachable one by one.
+- **Live regions**: the index's "Showing N of 852" line, the admin table's count and sort line ("Sorted by completeness, lowest first"), loading lines (`role="status"`) and inline failures (`role="alert"`).
+- **Tables**: hours are a `table` with a hidden caption, day names as row headers, today marked with `aria-current="date"` and the word "today", and the unknown-days note tied on with `aria-describedby`. Admin columns carry `aria-sort`.
+- **Dialogs**: alert dialogs trap focus, open on Cancel (first in the DOM), close on Escape, and return focus to their trigger.
 
 ## Layout frames
 
@@ -176,5 +244,8 @@ These ban the patterns in AUDIT.md. Each line names its entry.
 | lucide icons or sonner's default toast icons (F-FOUND-3) | The custom marks in `icons.tsx` |
 | `disabled:opacity-50`, or the press-nudge `active:translate-y-px` (F-FOUND-2) | `ink-faint` on `line-strong`, and no movement on press |
 | DOM markers on the main map (BRIEF 6.3) | Mapbox symbol and circle layers on the single GeoJSON source |
+| `ink-faint` for text anyone has to read (fails 4.5:1) | `ink-quiet`. Keep `ink-faint` for rules, field borders and disabled text |
+| "0 stores" when a load failed (F-STATE-3) | Say it didn't load, say nothing was removed, offer Try again |
+| Motion for its own sake: hover scale, bounce, staggered lists | The four transitions under Motion, and none in the admin |
 | Em dashes in any UI copy (BRIEF 5.1) | A full stop, a colon or a middle dot (·) |
 | CSS overrides of Clerk internals (BRIEF 3.4) | `lib/clerkAppearance.ts`, through the `appearance` API |

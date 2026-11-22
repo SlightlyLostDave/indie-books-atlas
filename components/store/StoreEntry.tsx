@@ -83,7 +83,7 @@ export function StoreEntryBody({
           {place ?? <Unknown>Place not yet recorded</Unknown>}
         </p>
         {hasCoords && (
-          <p className="mt-1.5 font-mono text-meta text-ink-faint tabular-nums">
+          <p className="mt-1.5 font-mono text-meta text-ink-quiet tabular-nums">
             {formatCoordinates(store.lat!, store.lng!)}
           </p>
         )}

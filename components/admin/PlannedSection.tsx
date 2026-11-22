@@ -51,7 +51,7 @@ export function PlannedSection({
       {children}
 
       <div className="mt-(--gap-section) grid min-h-40 place-items-center border border-dashed border-ink-faint p-6 text-center">
-        <p className="font-display text-prose text-ink-faint italic">{placeholder}</p>
+        <p className="font-display text-prose text-ink-quiet italic">{placeholder}</p>
       </div>
     </div>
   );

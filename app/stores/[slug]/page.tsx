@@ -9,7 +9,7 @@ import { provinceName } from "@/lib/format";
 import { directionsUrl as directionsFor, formatCoordinates } from "@/lib/geo";
 import { SITE_URL } from "@/lib/site";
 import { getStoreBySlug, getStoreSlugs } from "@/lib/stores";
-import { linkClass, quietLinkClass } from "@/lib/styles";
+import { creditLinkClass, linkClass, quietLinkClass } from "@/lib/styles";
 import { buildStoreJsonLd, serializeJsonLd } from "@/lib/structuredData";
 
 // Rebuild each store page at most once a day; new slugs render on demand.
@@ -118,7 +118,7 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
               <figure>
                 {/* Dashed: not on the plate (DESIGN.md, Shape) */}
                 <div className="grid h-56 place-items-center border border-dashed border-ink-faint p-6 text-center">
-                  <p className="font-display text-prose text-ink-faint italic">
+                  <p className="font-display text-prose text-ink-quiet italic">
                     {store.province ? `${provinceName(store.province)}. ` : ""}Exact location not yet recorded.
                   </p>
                 </div>
@@ -158,14 +158,14 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
               </Link>
             </section>
 
-            <div className="mt-6 flex flex-col gap-2 text-meta text-ink-faint sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+            <div className="mt-6 flex flex-col gap-2 text-meta text-ink-quiet sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
               <p>
                 Location and listing data ©{" "}
                 <a
                   href="https://www.openstreetmap.org/copyright"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={quietLinkClass}
+                  className={creditLinkClass}
                 >
                   OpenStreetMap contributors
                 </a>

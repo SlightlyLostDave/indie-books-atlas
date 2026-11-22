@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** An unknown value: Playfair italic in ink-faint (DESIGN.md, principle 5). */
 export function Unknown({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn("font-display text-ink-faint italic", className)}>{children}</span>;
+  return <span className={cn("font-display text-ink-quiet italic", className)}>{children}</span>;
 }
 
 /** "a, b and c" */

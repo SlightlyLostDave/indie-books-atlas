@@ -13,6 +13,10 @@ interface DataFreshnessProps {
  * "Store data last synced: <date>". A plain sentence with the date set as a
  * figure (DESIGN.md: no status dot, no tracked caps). Plain (non-async) so
  * client trees can render it too.
+ *
+ * When the date couldn't be read (the GitHub API failed or rate-limited),
+ * the sentence keeps its shape and the date reads as an absence, in the
+ * marginal italic. It never guesses a date or claims a schedule.
  */
 export default function DataFreshness({ syncedAt, className, inline = false }: DataFreshnessProps) {
   const iso = syncedAt ? new Date(syncedAt).toISOString() : null;
@@ -28,7 +32,10 @@ export default function DataFreshness({ syncedAt, className, inline = false }: D
           </time>
         </>
       ) : (
-        "Store data synced weekly from OpenStreetMap"
+        <>
+          Store data last synced:{" "}
+          <span className="font-display text-ink-quiet italic">date not available just now</span>
+        </>
       )}
     </Tag>
   );

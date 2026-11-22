@@ -50,7 +50,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           error: "border-t-3 border-t-danger",
           warning: "border-t-3 border-t-amber",
           actionButton:
-            "ml-auto h-(--control-h-sm) shrink-0 rounded-none border border-moss bg-moss px-2.5 text-ui font-medium text-bg hover:bg-moss-deep",
+            "ml-auto h-(--control-h-sm) shrink-0 rounded-none border border-moss bg-moss px-2.5 text-ui font-medium text-bg hover:border-(--primary-hover-line) hover:bg-(--primary-hover)",
           cancelButton:
             "h-(--control-h-sm) shrink-0 rounded-none border border-line-strong bg-transparent px-2.5 text-ui text-ink hover:border-moss",
           closeButton:

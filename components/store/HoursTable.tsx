@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { dayKeyFor, formatWeekRows } from "@/lib/hours";
 import type { DayKey, HoursParsed } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,10 +30,14 @@ export default function HoursTable({ hours, markToday = true, size = "body", cla
   const todayKey: DayKey | null = useSyncExternalStore(noSubscribe, today, serverToday);
   const rows = formatWeekRows(hours);
   const anyUnknown = rows.some((r) => r.hours === null);
+  const noteId = useId();
 
   return (
     <div className={className}>
-      <table className={cn("w-full border-collapse", size === "ui" ? "text-ui" : "text-body")}>
+      <table
+        aria-describedby={anyUnknown ? noteId : undefined}
+        className={cn("w-full border-collapse", size === "ui" ? "text-ui" : "text-body")}
+      >
         <caption className="sr-only">Opening hours</caption>
         <tbody>
           {rows.map((row) => {
@@ -59,7 +63,7 @@ export default function HoursTable({ hours, markToday = true, size = "body", cla
                 </th>
                 <td className={cn("w-full py-1 pr-2.5 align-baseline", row.key === "ph" && "pt-2")}>
                   {row.hours === null ? (
-                    <span className="font-display text-ink-faint italic">Not recorded</span>
+                    <span className="font-display text-ink-quiet italic">Not recorded</span>
                   ) : (
                     <span className={cn("lining-nums tabular-nums", isToday ? "font-medium text-ink" : "text-ink")}>
                       {row.hours}
@@ -73,7 +77,7 @@ export default function HoursTable({ hours, markToday = true, size = "body", cla
         </tbody>
       </table>
       {anyUnknown && (
-        <p className="mt-2 pl-3 text-meta text-ink-faint">
+        <p id={noteId} className="mt-2 pl-3 text-meta text-ink-quiet">
           Days marked not recorded are unknown, not closed. Call ahead to be sure.
         </p>
       )}

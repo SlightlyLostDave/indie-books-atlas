@@ -64,7 +64,7 @@ export function AdminNav() {
                 >
                   <span>{item.label}</span>
                   {item.planned && (
-                    <span className="hidden font-display text-meta font-normal text-ink-faint italic md:inline">
+                    <span className="hidden font-display text-meta font-normal text-ink-quiet italic md:inline">
                       planned
                     </span>
                   )}

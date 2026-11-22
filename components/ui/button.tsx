@@ -15,7 +15,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-moss bg-moss text-bg hover:border-moss-deep hover:bg-moss-deep",
+          "border-moss bg-moss text-bg hover:border-(--primary-hover-line) hover:bg-(--primary-hover)",
         outline:
           "border-line-strong bg-transparent text-ink hover:border-moss aria-expanded:border-moss",
         secondary:

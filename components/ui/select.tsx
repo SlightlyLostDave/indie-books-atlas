@@ -41,7 +41,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 rounded-none border border-line-strong bg-bg py-1 pr-2 pl-(--field-px) text-ui whitespace-nowrap text-ink transition-colors duration-(--dur-quick) outline-none select-none hover:border-moss aria-expanded:border-moss focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint aria-invalid:border-danger aria-invalid:focus-visible:outline-danger data-placeholder:text-ink-faint data-[size=default]:h-(--control-h) data-[size=sm]:h-(--control-h-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-fit items-center justify-between gap-2 rounded-none border border-ink-faint bg-bg py-1 pr-2 pl-(--field-px) text-ui whitespace-nowrap text-ink transition-colors duration-(--dur-quick) outline-none select-none hover:border-moss aria-expanded:border-moss focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border-line disabled:text-ink-faint aria-invalid:border-danger aria-invalid:focus-visible:outline-danger data-placeholder:text-ink-quiet data-[size=default]:h-(--control-h) data-[size=sm]:h-(--control-h-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -102,7 +102,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn("px-(--field-px) pt-2 pb-1 font-display text-meta italic text-ink-faint", className)}
+      className={cn("px-(--field-px) pt-2 pb-1 font-display text-meta italic text-ink-quiet", className)}
       {...props}
     />
   )

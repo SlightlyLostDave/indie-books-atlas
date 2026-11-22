@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 interface EditionLineProps {
   /** e.g. "Plate 1" or "Notes on the compilation". */
   imprint: string;
-  count: number;
+  /** `null` when the stores didn't load: the line says so instead of a zero. */
+  count: number | null;
   /** "mapped" (stores with a point) or "recorded" (every public entry). */
   countLabel: "mapped" | "recorded";
   syncedAt: Date | string | null;
@@ -23,8 +24,15 @@ export default function EditionLine({ imprint, count, countLabel, syncedAt, clas
         Indie Books Atlas · {imprint}
       </p>
       <p className="mt-1.5 text-meta text-ink-dim">
-        <span className="font-mono text-ink tabular-nums">{count.toLocaleString("en-CA")}</span>{" "}
-        {count === 1 ? "store" : "stores"} {countLabel} · <DataFreshness syncedAt={syncedAt} inline />
+        {count === null ? (
+          <span className="font-display text-ink-quiet italic">Stores not loaded</span>
+        ) : (
+          <>
+            <span className="font-mono text-ink tabular-nums">{count.toLocaleString("en-CA")}</span>{" "}
+            {count === 1 ? "store" : "stores"} {countLabel}
+          </>
+        )}{" "}
+        · <DataFreshness syncedAt={syncedAt} inline />
       </p>
     </div>
   );
