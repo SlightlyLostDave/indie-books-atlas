@@ -18,6 +18,11 @@ export default function AdminSignInPage() {
           <p className="mt-1 font-display text-prose italic text-ink-dim">Compilation office</p>
         </header>
         <SignIn appearance={{ elements: { footerAction: { display: "none" } } }} />
+        <p className="text-ui">
+          <Link href="/" className="text-ink-dim no-underline transition-colors duration-(--dur-quick) hover:text-moss">
+            ← Back to the public atlas
+          </Link>
+        </p>
       </div>
     </div>
   );

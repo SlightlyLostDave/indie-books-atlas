@@ -2,17 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageShell, { type Crumb } from "@/components/layout/PageShell";
-import { InstagramLink, SpecialtyLine, Unknown, joinList } from "@/components/store/EntryParts";
-import HoursTable from "@/components/store/HoursTable";
+import { StoreEntryBody, entryGaps, placeLine } from "@/components/store/StoreEntry";
 import StoreLocationMap from "@/components/store/StoreLocationMap";
 import { buttonVariants } from "@/components/ui/button";
-import { displayUrl, formatPhone, provinceName } from "@/lib/format";
+import { provinceName } from "@/lib/format";
 import { directionsUrl as directionsFor, formatCoordinates } from "@/lib/geo";
 import { SITE_URL } from "@/lib/site";
 import { getStoreBySlug, getStoreSlugs } from "@/lib/stores";
 import { linkClass, quietLinkClass } from "@/lib/styles";
 import { buildStoreJsonLd, serializeJsonLd } from "@/lib/structuredData";
-import type { PublicStore } from "@/lib/types";
 
 // Rebuild each store page at most once a day; new slugs render on demand.
 export const revalidate = 86400;
@@ -20,10 +18,6 @@ export const revalidate = 86400;
 export async function generateStaticParams() {
   const slugs = await getStoreSlugs();
   return slugs.map(({ slug }) => ({ slug }));
-}
-
-function placeLine(store: PublicStore): string | null {
-  return [store.city, provinceName(store.province)].filter(Boolean).join(", ") || null;
 }
 
 export async function generateMetadata({
@@ -57,15 +51,6 @@ export async function generateMetadata({
   };
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-1 gap-1 border-b border-line py-3.5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-6">
-      <dt className="text-ui text-ink-dim sm:pt-0.5">{label}</dt>
-      <dd className="min-w-0 text-body text-ink">{children}</dd>
-    </div>
-  );
-}
-
 export default async function StorePage({ params }: PageProps<"/stores/[slug]">) {
   const { slug } = await params;
   const store = await getStoreBySlug(slug);
@@ -73,27 +58,8 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
 
   const pageUrl = `${SITE_URL}/stores/${store.slug}`;
   const jsonLd = buildStoreJsonLd(store, pageUrl);
-  const place = placeLine(store);
-  const specialties = store.specialties ?? [];
-  const closed = store.is_permanently_closed;
-  const hasHours = store.hours_parsed != null && Object.keys(store.hours_parsed).length > 0;
   const hasCoords = store.lat != null && store.lng != null;
-  const localityLine = [store.city, store.province].filter(Boolean).join(", ");
-  const street = [store.address_line1, store.address_line2].filter(Boolean) as string[];
-  // The address row needs a street. A locality alone is already the place
-  // line, so it isn't repeated as an "address" of just "ON" (F-STORE-2).
-  const addressLines =
-    street.length > 0
-      ? [...street, [localityLine, store.postal_code].filter(Boolean).join(" ")].filter(Boolean)
-      : [];
-  const hasDetails =
-    addressLines.length > 0 || store.phone || store.website || store.instagram || hasHours || store.hours_raw;
-
-  const missing: string[] = [];
-  if (street.length === 0) missing.push("street address");
-  if (!store.phone) missing.push("telephone");
-  if (!store.website) missing.push("website");
-  if (!hasHours && !store.hours_raw) missing.push("hours");
+  const missing = entryGaps(store);
   // Most entries are a name and a point; the slip says so and leads.
   const isStub = missing.length >= 3;
 
@@ -125,99 +91,7 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
             screens the inset sits between the details and the slip. */}
         <article className="grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0">
-            <header>
-              <h1 className="font-display text-page font-bold text-balance text-ink">{store.name}</h1>
-              <p className="mt-3 font-display text-lede text-ink-dim italic">
-                {place ?? <Unknown>Place not yet recorded</Unknown>}
-              </p>
-              {hasCoords && (
-                <p className="mt-1.5 font-mono text-meta text-ink-faint tabular-nums">
-                  {formatCoordinates(store.lat!, store.lng!)}
-                </p>
-              )}
-              {store.short_description && (
-                <p className="mt-6 max-w-[40rem] text-prose text-ink-dim">{store.short_description}</p>
-              )}
-              <SpecialtyLine tags={specialties} className="mt-5 text-body" />
-            </header>
-
-            {closed && (
-              // The plate rule below closes the notice, so it only needs a top rule.
-              <p className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-danger py-3 text-body">
-                <span className="font-medium text-danger">
-                  <span aria-hidden="true">× </span>Permanently closed
-                </span>
-                <span className="text-ink-dim">This store has closed. Its listing stays up as a record.</span>
-              </p>
-            )}
-
-            {/* The plate rule under the entry header */}
-            <section
-              aria-labelledby="store-details-heading"
-              className={closed ? "border-t-2 border-ink" : "mt-8 border-t-2 border-ink"}
-            >
-              <h2 id="store-details-heading" className="sr-only">
-                Store details
-              </h2>
-              {hasDetails && (
-                <dl>
-                  {addressLines.length > 0 && (
-                    <DetailRow label="Address">
-                      <address className="not-italic">
-                        {addressLines.map((line) => (
-                          <span key={line} className="block">
-                            {line}
-                          </span>
-                        ))}
-                      </address>
-                    </DetailRow>
-                  )}
-
-                  {store.phone && (
-                    <DetailRow label="Telephone">
-                      <a href={`tel:${store.phone}`} className={`${linkClass} tabular-nums`}>
-                        {formatPhone(store.phone)}
-                      </a>
-                    </DetailRow>
-                  )}
-
-                  {store.website && (
-                    <DetailRow label="Website">
-                      <a
-                        href={store.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${linkClass} break-words`}
-                      >
-                        {displayUrl(store.website)} ↗
-                      </a>
-                    </DetailRow>
-                  )}
-
-                  {store.instagram && (
-                    <DetailRow label="Instagram">
-                      <InstagramLink handle={store.instagram} />
-                    </DetailRow>
-                  )}
-
-                  {(hasHours || store.hours_raw) && (
-                    <DetailRow label="Hours">
-                      {hasHours ? (
-                        <HoursTable hours={store.hours_parsed!} markToday={!closed} className="-ml-2.5 max-w-md" />
-                      ) : (
-                        <span className="text-ink-dim">Hours vary — call ahead to confirm.</span>
-                      )}
-                    </DetailRow>
-                  )}
-                </dl>
-              )}
-
-              {missing.length > 0 && (
-                <p className="mt-4 text-prose">
-                  <Unknown>Not yet recorded: {joinList(missing)}.</Unknown>
-                </p>
-              )}
-            </section>
+            <StoreEntryBody store={store} />
           </div>
 
           <aside aria-label="Location" className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-3">

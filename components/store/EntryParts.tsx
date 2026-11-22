@@ -37,18 +37,37 @@ const SEGMENTS = 10;
  * as discrete steps rather than a gauge. Filled versus hollow carries the
  * reading, not the colour.
  */
-export function Completeness({ score, className }: { score: number; className?: string }) {
+export function Completeness({
+  score,
+  className,
+  label = "Completeness",
+  as: Tag = "p",
+  segmentClassName = "w-2.5",
+}: {
+  score: number;
+  className?: string;
+  /** The word before the scale. `null` drops it, as in a table column headed "Completeness". */
+  label?: string | null;
+  as?: "p" | "span";
+  /** Segment width. The admin table narrows it on small screens. */
+  segmentClassName?: string;
+}) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const filled = Math.round(clamped / (100 / SEGMENTS));
 
   return (
-    <p className={cn("flex items-center gap-3 text-ui text-ink-dim", className)}>
-      <span>Completeness</span>
+    <Tag className={cn("flex items-center gap-3 text-ui text-ink-dim", className)}>
+      {label && <span>{label}</span>}
       <span aria-hidden="true" className="inline-flex border border-ink-faint">
         {Array.from({ length: SEGMENTS }, (_, i) => (
           <span
             key={i}
-            className={cn("h-1.5 w-2.5", i > 0 && "border-l border-ink-faint", i < filled ? "bg-moss" : "bg-transparent")}
+            className={cn(
+              "h-1.5",
+              segmentClassName,
+              i > 0 && "border-l border-ink-faint",
+              i < filled ? "bg-moss" : "bg-transparent",
+            )}
           />
         ))}
       </span>
@@ -56,7 +75,7 @@ export function Completeness({ score, className }: { score: number; className?: 
         {clamped}
         <span className="sr-only"> out of 100</span>
       </span>
-    </p>
+    </Tag>
   );
 }
 

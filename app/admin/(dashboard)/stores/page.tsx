@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { getStoresList } from "@/lib/admin/stores";
 import { StoresTable } from "@/components/admin/StoresTable";
 import { StoresFilterBar } from "@/components/admin/StoresFilterBar";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { LoadingIcon } from "@/components/ui/icons";
 import type { StoresListFilters } from "@/lib/admin/types";
 
 interface PageProps {
@@ -38,17 +40,21 @@ async function StoresListResults({ searchParams }: PageProps) {
 export default function AdminStoresPage({ searchParams }: PageProps) {
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold text-ink">Stores</h1>
-      <p className="mt-2 text-ink-dim">
-        Search, filter, and triage the store catalog.
-      </p>
+      <AdminPageHeader title="Stores" lede="The catalogue: search it, filter it, open an entry to work on it." />
 
-      <div className="mt-6">
+      <div className="mt-(--gap-block)">
         <StoresFilterBar />
       </div>
 
-      <div className="mt-6">
-        <Suspense fallback={<p className="text-ink-dim">Loading…</p>}>
+      <div className="mt-(--gap-block)">
+        <Suspense
+          fallback={
+            <p role="status" className="flex items-center gap-2 border-t border-ink-faint pt-4 text-ui text-ink-dim">
+              <LoadingIcon className="size-4 text-moss" />
+              <span className="font-display italic">Reading the catalogue…</span>
+            </p>
+          }
+        >
           <StoresListResults searchParams={searchParams} />
         </Suspense>
       </div>

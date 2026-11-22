@@ -17,6 +17,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme}
+      position="bottom-right"
+      gap={8}
       className="toaster group"
       icons={{
         success: <CheckIcon className="size-4 text-moss" />,
@@ -28,6 +30,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       style={
         {
           "--border-radius": "0px",
+          "--width": "22rem",
+          // DESIGN.md, Elevation: toasts sit at 60, above dialogs (50).
+          zIndex: 60,
         } as React.CSSProperties
       }
       toastOptions={{
@@ -39,6 +44,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
           content: "flex min-w-0 flex-1 flex-col gap-0.5",
           title: "font-medium text-ink",
           description: "text-meta text-ink-dim",
+          // The same top rules as dialogs: the plate rule for a done thing,
+          // the danger rule for a failure.
+          success: "border-t-2 border-t-ink",
           error: "border-t-3 border-t-danger",
           warning: "border-t-3 border-t-amber",
           actionButton:

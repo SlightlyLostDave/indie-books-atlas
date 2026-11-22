@@ -56,6 +56,15 @@ export function ChevronRightIcon(props: IconProps) {
   )
 }
 
+/** Both chevrons, small: a column that can be sorted but isn't. */
+export function SortableIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5.5 6.5 8 4 10.5 6.5M5.5 9.5 8 12 10.5 9.5" />
+    </Icon>
+  )
+}
+
 /** The tick: also the "verified" status mark. */
 export function CheckIcon(props: IconProps) {
   return (
@@ -98,6 +107,15 @@ export function FlagMark({ className, ...props }: IconProps) {
   return (
     <Icon className={className} {...props}>
       <rect x="4.5" y="4.5" width="7" height="7" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+/** · Unverified: a small solid point, the quietest mark. */
+export function DotMark({ className, ...props }: IconProps) {
+  return (
+    <Icon className={className} {...props}>
+      <rect x="6.75" y="6.75" width="2.5" height="2.5" fill="currentColor" stroke="none" />
     </Icon>
   )
 }

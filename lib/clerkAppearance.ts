@@ -9,6 +9,18 @@
 const display = "var(--font-playfair), Georgia, serif";
 const sans = "var(--font-jost), system-ui, sans-serif";
 
+// Clerk's own focus rule outranks element styles here, so the field's
+// shadows are marked important. Still the appearance API, not a stylesheet.
+const fieldInput = {
+  boxShadow: "inset 0 0 0 1px var(--line-strong) !important",
+  "&:hover": { boxShadow: "inset 0 0 0 1px var(--moss) !important" },
+  "&:focus, &:focus-visible, &[data-focus]": {
+    boxShadow: "inset 0 0 0 1px var(--moss) !important",
+    outline: "2px solid var(--moss)",
+    outlineOffset: "-1px",
+  },
+};
+
 export const clerkAppearance = {
   variables: {
     colorPrimary: "var(--moss)",
@@ -40,10 +52,24 @@ export const clerkAppearance = {
     userButtonAvatarBox: { borderRadius: "0px", width: "1.75rem", height: "1.75rem" },
     userButtonTrigger: { borderRadius: "0px" },
     avatarBox: { borderRadius: "0px" },
-    headerTitle: { fontFamily: display, fontWeight: 700, fontSize: "1.5rem" },
-    headerSubtitle: { color: "var(--ink-dim)" },
-    formButtonPrimary: { boxShadow: "none", backgroundImage: "none", fontWeight: 500 },
-    formFieldInput: { boxShadow: "none" },
+    // Left-aligned, like the title block above the card.
+    header: { alignItems: "flex-start", textAlign: "left" },
+    headerTitle: { fontFamily: display, fontWeight: 700, fontSize: "1.5rem", textAlign: "left" },
+    headerSubtitle: { color: "var(--ink-dim)", textAlign: "left" },
+    // Flat: no sheen, no press shadow (DESIGN.md, Elevation).
+    formButtonPrimary: {
+      boxShadow: "none",
+      backgroundImage: "none",
+      fontWeight: 500,
+      "&::after": { display: "none" },
+      "&:hover, &:focus, &:active": { boxShadow: "none", backgroundImage: "none" },
+      "&:hover": { backgroundColor: "var(--moss-deep)" },
+    },
+    // A control border, and the 2px moss outline on focus instead of Clerk's
+    // halo. Clerk draws both with box-shadow, so the border is a 1px inset
+    // shadow in line-strong rather than a CSS border.
+    input: fieldInput,
+    formFieldInput: fieldInput,
     socialButtonsBlockButton: { boxShadow: "none" },
   },
 };
