@@ -1,11 +1,23 @@
+/**
+ * Properties of one `stores_geojson` feature, as the live RPC returns them.
+ * The payload is kept slim: description, parsed hours and the rest of the
+ * address come from `/api/stores/[slug]` when a store is selected.
+ */
 export interface StoreFeatureProperties {
+  id: string | number;
   slug: string;
   name: string;
-  short_description: string | null;
-  specialties: string[] | null;
-  data_quality_score: number;
   city: string | null;
   province: string | null;
+  address_line1: string | null;
+  phone: string | null;
+  website: string | null;
+  instagram: string | null;
+  specialties: string[] | null;
+  is_verified: boolean;
+  is_featured: boolean;
+  data_quality_score: number;
+  hours_raw: string | null;
 }
 
 export interface StoreFeature {

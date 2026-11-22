@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submissions review queue (static mock) · Indie Books Atlas</title>
+<!--
+  Static design mock for /admin/submissions, Direction A "Plate" at compact
+  density (docs/design/DESIGN.md). Not wired to anything. Sample data only.
+  Build it for real once the `submissions` columns are documented; the
+  columns assumed here are listed in the margin note at the foot.
+  Tokens are copied from app/globals.css (both themes) so the file stands alone.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=Jost:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #100e0b; --bg-raised: #19150f; --bg-step: #14110c;
+    --ink: #ece4d6; --ink-dim: #a99f8e; --ink-faint: #756d5e;
+    --moss: #7c9a55; --moss-deep: #5c7340; --amber: #d49a4a; --danger: #c9603f;
+    --line: rgba(124,154,85,.18); --line-strong: rgba(124,154,85,.34);
+    --fs-meta: .75rem; --fs-ui: .8125rem; --fs-body: .875rem; --fs-prose: .9375rem;
+    --fs-heading: 1.25rem; --fs-title: 1.625rem;
+    --control-h: 1.875rem; --control-h-sm: 1.625rem; --control-px: .625rem; --row-y: .375rem;
+    --gap-stack: .5rem; --gap-block: 1rem; --gap-section: 2rem; --gutter: 1.5rem;
+    --display: "Playfair Display", Georgia, serif; --sans: "Jost", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  :root.light {
+    --bg: #f6f1e7; --bg-raised: #fffdf9; --bg-step: #efe8da;
+    --ink: #241f16; --ink-dim: #5c5343; --ink-faint: #8a7f6c;
+    --moss: #5c7340; --moss-deep: #4a5c33; --amber: #a9701f; --danger: #9e3f22;
+    --line: rgba(92,115,64,.18); --line-strong: rgba(92,115,64,.34);
+  }
+  @media (max-width: 767.98px) { :root { --gutter: 1.125rem; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font: var(--fs-ui)/1.45 var(--sans); }
+  a { color: var(--moss); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: currentColor; }
+  :focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums lining-nums; }
+  .italic { font-family: var(--display); font-style: italic; }
+  .faint { color: var(--ink-faint); } .dim { color: var(--ink-dim); }
+
+  /* Shell: the compilation office rail, as in components/admin/AdminNav.tsx */
+  .office { min-height: 100dvh; display: grid; grid-template-columns: 13.5rem minmax(0,1fr); }
+  .rail { background: var(--bg-raised); border-right: 1px solid var(--ink-faint); display: flex; flex-direction: column; position: sticky; top: 0; height: 100dvh; }
+  .rail .mark { padding: 1.125rem 1.125rem .875rem; border-bottom: 1px solid var(--ink-faint); }
+  .rail .mark b { display: block; font: 700 1.0625rem/1.25 var(--display); }
+  .rail .mark i { display: block; font: italic .84375rem var(--display); color: var(--ink-dim); }
+  .rail ul { list-style: none; padding: .625rem 0; flex: 1; }
+  .rail li a { display: flex; justify-content: space-between; padding: .4375rem 1.125rem .4375rem 1rem; border-left: 2px solid transparent; color: var(--ink-dim); text-decoration: none; }
+  .rail li a[aria-current] { border-color: var(--moss); background: var(--bg-step); color: var(--ink); font-weight: 500; }
+  .rail li a span { font: italic var(--fs-meta) var(--display); color: var(--ink-faint); }
+  .rail .foot { border-top: 1px solid var(--line); padding: .875rem 1.125rem; }
+  main { padding: 1.5rem var(--gutter) 3rem; min-width: 0; }
+  @media (max-width: 767.98px) {
+    .office { display: block; }
+    .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--ink-faint); }
+    .rail ul { display: flex; overflow-x: auto; padding: 0; }
+    .rail li a { border-left: 0; border-bottom: 2px solid transparent; padding: .5rem .75rem; white-space: nowrap; }
+    .rail li a span, .rail .foot { display: none; }
+  }
+
+  /* Sample banner: dashed, because it isn't on the plate */
+  .sample { border: 1px dashed var(--ink-faint); padding: .5rem .75rem; margin-bottom: var(--gap-block); color: var(--ink-dim); }
+
+  /* Title block */
+  header.title { border-bottom: 2px solid var(--ink); padding-bottom: .75rem; }
+  h1 { font: 700 var(--fs-title)/1.1 var(--display); }
+  header.title p { margin-top: .375rem; font: italic var(--fs-prose) var(--display); color: var(--ink-dim); }
+
+  /* Queue filter: square segmented control */
+  .bar { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center; margin-top: var(--gap-block); }
+  .seg { display: inline-flex; border: 1px solid var(--line-strong); }
+  .seg button { height: var(--control-h-sm); padding: 0 .625rem; background: none; border: 0; color: var(--ink-dim); font: var(--fs-ui) var(--sans); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line-strong); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); font-weight: 500; }
+
+  /* Two panes: the queue and the submission being read */
+  .panes { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 0 2.5rem; margin-top: var(--gap-block); }
+  @media (max-width: 1023.98px) { .panes { grid-template-columns: 1fr; gap: var(--gap-section); } }
+
+  .queue { list-style: none; border-top: 2px solid var(--ink); }
+  .queue li a { display: grid; grid-template-columns: 1fr auto; gap: .125rem .75rem; padding: .5rem .75rem; border-bottom: 1px solid var(--line); border-left: 2px solid transparent; color: inherit; text-decoration: none; }
+  .queue li a:hover { background: var(--bg-step); }
+  .queue li a[aria-current] { border-left-color: var(--moss); background: var(--bg-step); }
+  .queue .kind { font-weight: 500; }
+  .queue .store { grid-column: 1 / -1; color: var(--ink-dim); }
+  .queue .when { color: var(--ink-faint); font-size: var(--fs-meta); }
+
+  /* Kind marks: glyph plus word */
+  .k { display: inline-flex; align-items: center; gap: .3rem; }
+  .k::before { content: ""; width: .5rem; height: .5rem; display: inline-block; }
+  .k.correction::before { background: var(--moss); }
+  .k.closed::before { border: 1.5px solid var(--danger); }
+  .k.new::before { border: 1.5px solid var(--ink-dim); border-style: dashed; }
+
+  /* The submission, read beside the entry it concerns */
+  .read h2 { font: 600 var(--fs-heading)/1.2 var(--display); }
+  .meta { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-top: .5rem; color: var(--ink-dim); }
+  .slip { margin-top: var(--gap-block); border: 1px solid var(--ink-faint); border-top: 2px solid var(--ink); background: var(--bg-raised); padding: 1rem 1.25rem; }
+  .slip h3, .record h3 { font: italic var(--fs-prose) var(--display); color: var(--ink-dim); font-weight: 400; }
+  .slip blockquote { margin-top: .5rem; font-size: var(--fs-body); line-height: 1.55; white-space: pre-line; }
+  .record { margin-top: var(--gap-section); border-top: 1px solid var(--ink-faint); padding-top: .75rem; }
+  dl.rows div { display: grid; grid-template-columns: 7rem minmax(0,1fr) minmax(0,1fr); gap: .75rem; padding: var(--row-y) 0; border-bottom: 1px solid var(--line); }
+  dl.rows div.head { border-bottom: 1px solid var(--ink-faint); color: var(--ink-dim); font-size: var(--fs-meta); }
+  dl.rows dt { color: var(--ink-dim); }
+  dl.rows .changed { background: var(--bg-step); border-left: 2px solid var(--moss); padding-left: .5rem; }
+  @media (max-width: 599.98px) { dl.rows div { grid-template-columns: 1fr; gap: .125rem; } dl.rows div.head { display: none; } }
+
+  /* Decision: accept is the primary; turning down asks for a reason */
+  .decide { margin-top: var(--gap-section); border-top: 2px solid var(--ink); padding-top: .75rem; display: grid; gap: var(--gap-block); }
+  .decide h3 { font: 600 var(--fs-heading)/1.2 var(--display); }
+  .btn { height: var(--control-h); padding: 0 var(--control-px); border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font: 500 var(--fs-ui) var(--sans); cursor: pointer; }
+  .btn:hover { border-color: var(--moss); }
+  .btn.primary { background: var(--moss); border-color: var(--moss); color: var(--bg); }
+  .btn.primary:hover { background: var(--moss-deep); border-color: var(--moss-deep); }
+  .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  label { display: block; color: var(--ink); }
+  label i { font: italic var(--fs-meta) var(--display); color: var(--ink-faint); margin-left: .375rem; }
+  textarea { margin-top: .375rem; width: 100%; max-width: 36rem; min-height: 4.5rem; padding: .5rem; border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink); font: var(--fs-body)/1.5 var(--sans); resize: vertical; }
+  textarea:focus-visible { border-color: var(--moss); outline-offset: -1px; }
+  .hint { font-size: var(--fs-meta); color: var(--ink-faint); margin-top: .25rem; }
+
+  .note { margin-top: 4rem; border-top: 3px double var(--ink-faint); padding-top: .75rem; max-width: 46rem; color: var(--ink-dim); }
+  .note h2 { font: italic var(--fs-prose) var(--display); color: var(--ink-dim); font-weight: 400; }
+  .note ul { margin: .5rem 0 0 1.1rem; display: grid; gap: .25rem; }
+  .theme { display: inline-flex; border: 1px solid var(--line-strong); }
+  .theme button { height: 1.625rem; padding: 0 .625rem; border: 0; background: none; color: var(--ink-dim); font: 500 var(--fs-meta) var(--sans); cursor: pointer; }
+  .theme button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+</style>
+</head>
+<body>
+<div class="office">
+  <aside class="rail">
+    <div class="mark"><b>Indie Books Atlas</b><i>Compilation office</i></div>
+    <ul>
+      <li><a href="#">Dashboard</a></li>
+      <li><a href="#">Stores</a></li>
+      <li><a href="#" aria-current="page">Submissions</a></li>
+      <li><a href="#">Events <span>planned</span></a></li>
+      <li><a href="#">Users <span>planned</span></a></li>
+    </ul>
+    <div class="foot">
+      <div class="theme" role="group" aria-label="Colour theme">
+        <button type="button" data-theme="dark" aria-pressed="true">Dark</button><button type="button" data-theme="light" aria-pressed="false">Light</button>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <p class="sample"><span class="italic">Static mock.</span> Sample submissions, not real ones. Nothing here is wired up.</p>
+
+    <header class="title">
+      <h1>Submissions</h1>
+      <p>Read each one beside the entry it concerns, then accept it or turn it down.</p>
+    </header>
+
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Queue">
+        <button type="button" aria-pressed="true">Waiting <span class="mono">3</span></button>
+        <button type="button" aria-pressed="false">Accepted <span class="mono">12</span></button>
+        <button type="button" aria-pressed="false">Turned down <span class="mono">2</span></button>
+      </div>
+      <span class="dim">Oldest first</span>
+    </div>
+
+    <div class="panes">
+      <nav aria-label="Waiting submissions">
+        <ul class="queue">
+          <li><a href="#" aria-current="true">
+            <span class="kind k correction">Correction</span><span class="when mono">2026-11-19</span>
+            <span class="store">Drawn &amp; Quarterly · Montréal, QC</span>
+          </a></li>
+          <li><a href="#">
+            <span class="kind k closed">Says it has closed</span><span class="when mono">2026-11-20</span>
+            <span class="store">Larkspur Books · <span class="italic faint">place not recorded</span></span>
+          </a></li>
+          <li><a href="#">
+            <span class="kind k new">Missing store</span><span class="when mono">2026-11-21</span>
+            <span class="store">“Paper Lantern Books”, Guelph, ON</span>
+          </a></li>
+        </ul>
+      </nav>
+
+      <article class="read" aria-labelledby="sub-title">
+        <h2 id="sub-title"><span class="k correction">Correction</span> to Drawn &amp; Quarterly</h2>
+        <p class="meta">
+          <span>Received <span class="mono">2026-11-19</span></span>
+          <span>From <span class="mono">r•••@example.com</span></span>
+          <a href="#">Open the store's page in the office →</a>
+        </p>
+
+        <section class="slip" aria-labelledby="said">
+          <h3 id="said">What they said</h3>
+          <blockquote>They're open Sundays now, 11 to 5, since the summer. Phone number on the site is still right.</blockquote>
+        </section>
+
+        <section class="record" aria-labelledby="against">
+          <h3 id="against">Against the record</h3>
+          <dl class="rows" style="margin-top:.5rem">
+            <div class="head"><dt>Field</dt><dd>In the record now</dd><dd>If accepted</dd></div>
+            <div><dt>Hours</dt><dd class="mono">Mo-Sa 10:00-18:00</dd><dd class="mono changed">Mo-Sa 10:00-18:00; Su 11:00-17:00</dd></div>
+            <div><dt>Telephone</dt><dd class="mono">(514) 555-0142</dd><dd class="italic faint">No change</dd></div>
+          </dl>
+          <p class="hint">The "if accepted" column is filled in by the reviewer, not parsed from the message.</p>
+        </section>
+
+        <section class="decide" aria-labelledby="decide-h">
+          <h3 id="decide-h">Decision</h3>
+          <div class="row">
+            <button class="btn primary" type="button">Accept and edit the store</button>
+            <span class="dim">Opens the edit form with the change; saving writes the change log.</span>
+          </div>
+          <div>
+            <label for="reason">Reason for turning it down <i>optional</i></label>
+            <textarea id="reason" maxlength="500" placeholder="For the record, not sent to them."></textarea>
+            <p class="hint">Up to 500 characters (rejectSubmissionSchema).</p>
+            <div class="row" style="margin-top:.5rem"><button class="btn" type="button">Turn down</button></div>
+          </div>
+        </section>
+      </article>
+    </div>
+
+    <section class="note" aria-labelledby="assumed">
+      <h2 id="assumed">Assumed, to confirm against the schema</h2>
+      <ul>
+        <li><span class="mono">submission_type</span>: <span class="mono">correction</span>, <span class="mono">closed</span>, <span class="mono">new_store</span>, from the radio values on <span class="mono">/submit</span>.</li>
+        <li><span class="mono">store_id</span>, <span class="mono">store_slug</span> (null for a missing store), <span class="mono">details</span>, <span class="mono">email</span> (optional), <span class="mono">created_at</span>, from the form's fields.</li>
+        <li>A status (waiting, accepted, turned down), a reviewed-at date and a reason: not documented anywhere yet.</li>
+        <li>Accepting never writes the store directly from the queue: it hands the change to the store edit form, so the existing save path, score recompute and change log stay the only write.</li>
+        <li>The submitter's email is shown masked; the full address would sit behind a reveal for follow-up.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+<script>
+  // Theme switch for the mock only.
+  document.querySelectorAll('[data-theme]').forEach((b) => b.addEventListener('click', () => {
+    document.documentElement.classList.toggle('light', b.dataset.theme === 'light');
+    document.querySelectorAll('[data-theme]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  if (new URLSearchParams(location.search).get('theme') === 'light') document.querySelector('[data-theme="light"]').click();
+</script>
+</body>
+</html>

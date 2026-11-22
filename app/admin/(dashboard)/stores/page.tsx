@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { getStoresList } from "@/lib/admin/stores";
-import { StoresTable } from "@/components/admin/StoresTable";
+import { StoresTable, StoresTableLoading } from "@/components/admin/StoresTable";
 import { StoresFilterBar } from "@/components/admin/StoresFilterBar";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import type { StoresListFilters } from "@/lib/admin/types";
 
 interface PageProps {
@@ -37,18 +38,17 @@ async function StoresListResults({ searchParams }: PageProps) {
 
 export default function AdminStoresPage({ searchParams }: PageProps) {
   return (
-    <div>
-      <h1 className="font-display text-3xl font-bold text-ink">Stores</h1>
-      <p className="mt-2 text-ink-dim">
-        Search, filter, and triage the store catalog.
-      </p>
+    // data-stores-list: while the filter bar reports a pending change, the
+    // rows on screen are marked stale (globals.css).
+    <div data-stores-list>
+      <AdminPageHeader title="Stores" lede="The catalogue: search it, filter it, open an entry to work on it." />
 
-      <div className="mt-6">
+      <div className="mt-(--gap-block)">
         <StoresFilterBar />
       </div>
 
-      <div className="mt-6">
-        <Suspense fallback={<p className="text-ink-dim">Loading…</p>}>
+      <div className="mt-(--gap-block)">
+        <Suspense fallback={<StoresTableLoading />}>
           <StoresListResults searchParams={searchParams} />
         </Suspense>
       </div>

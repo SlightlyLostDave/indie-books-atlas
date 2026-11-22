@@ -3,25 +3,26 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { PublicStore, StoreFeatureCollection } from "@/lib/types";
 
-const EMPTY_FEATURE_COLLECTION: StoreFeatureCollection = {
-  type: "FeatureCollection",
-  features: [],
-};
-
-export async function getStoresGeoJSON(): Promise<StoreFeatureCollection> {
+/**
+ * Every mapped store as GeoJSON, for the map. Returns `null` when the query
+ * fails, never an empty collection, so a failed load can't be mistaken for
+ * an atlas with no stores (AUDIT F-STATE-3). Errors are logged, not thrown,
+ * so the page still renders its plate and says the stores didn't load.
+ */
+export async function getStoresGeoJSON(): Promise<StoreFeatureCollection | null> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("stores_geojson");
 
     if (error) {
       console.error(`Failed to load stores_geojson: ${error.message}`);
-      return EMPTY_FEATURE_COLLECTION;
+      return null;
     }
 
     return data as StoreFeatureCollection;
   } catch (err) {
     console.error("Failed to load stores_geojson:", err);
-    return EMPTY_FEATURE_COLLECTION;
+    return null;
   }
 }
 

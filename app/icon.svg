@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- The plate mark (components/ui/icons.tsx, PlateMark) drawn for a tab:
+       the dark plate ground, a double neatline and the located point in
+       amber. Strokes sit on the 2px grid so they stay crisp at 16px. -->
+  <rect width="32" height="32" fill="#100e0b"/>
+  <rect x="3" y="3" width="26" height="26" fill="none" stroke="#a99f8e" stroke-width="2"/>
+  <rect x="8" y="8" width="16" height="16" fill="none" stroke="#ece4d6" stroke-width="2"/>
+  <rect x="13" y="13" width="6" height="6" fill="#d49a4a"/>
+</svg>

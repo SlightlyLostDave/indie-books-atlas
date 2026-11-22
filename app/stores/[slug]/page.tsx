@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Footer from "@/components/layout/Footer";
-import ThemeToggle from "@/components/layout/ThemeToggle";
-import StoreLocationMap from "@/components/store/StoreLocationMap";
-import { displayUrl, formatPhone, provinceName } from "@/lib/format";
-import { formatHoursRows } from "@/lib/hours";
+import PageShell, { type Crumb } from "@/components/layout/PageShell";
+import { StoreEntryBody, entryGaps, placeLine } from "@/components/store/StoreEntry";
+import LazyStoreLocationMap from "@/components/store/LazyStoreLocationMap";
+import { buttonVariants } from "@/components/ui/button";
+import { provinceName } from "@/lib/format";
+import { directionsUrl as directionsFor, formatCoordinates } from "@/lib/geo";
 import { SITE_URL } from "@/lib/site";
-import { specialtyLabel } from "@/lib/specialties";
 import { getStoreBySlug, getStoreSlugs } from "@/lib/stores";
+import { creditLinkClass, linkClass, quietLinkClass } from "@/lib/styles";
 import { buildStoreJsonLd, serializeJsonLd } from "@/lib/structuredData";
-import type { PublicStore } from "@/lib/types";
 
 // Rebuild each store page at most once a day; new slugs render on demand.
 export const revalidate = 86400;
@@ -18,10 +18,6 @@ export const revalidate = 86400;
 export async function generateStaticParams() {
   const slugs = await getStoreSlugs();
   return slugs.map(({ slug }) => ({ slug }));
-}
-
-function placeLine(store: PublicStore): string | null {
-  return [store.city, provinceName(store.province)].filter(Boolean).join(", ") || null;
 }
 
 export async function generateMetadata({
@@ -55,20 +51,6 @@ export async function generateMetadata({
   };
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-1 gap-1 border-b border-line py-4 last:border-b-0 sm:grid-cols-[7rem_1fr] sm:gap-4">
-      <dt className="pt-0.5 font-mono text-xs uppercase tracking-widest text-ink-faint">
-        {label}
-      </dt>
-      <dd className="text-sm leading-relaxed text-ink">{children}</dd>
-    </div>
-  );
-}
-
-const linkClass = "text-amber underline-offset-4 hover:underline";
-const monoLinkClass = "font-mono text-xs uppercase tracking-widest text-amber hover:underline";
-
 export default async function StorePage({ params }: PageProps<"/stores/[slug]">) {
   const { slug } = await params;
   const store = await getStoreBySlug(slug);
@@ -76,23 +58,20 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
 
   const pageUrl = `${SITE_URL}/stores/${store.slug}`;
   const jsonLd = buildStoreJsonLd(store, pageUrl);
-  const place = placeLine(store);
-  const specialties = store.specialties ?? [];
-  const hoursRows = formatHoursRows(store.hours_parsed);
   const hasCoords = store.lat != null && store.lng != null;
-  const localityLine = [store.city, store.province].filter(Boolean).join(", ");
-  const addressLines = [
-    store.address_line1,
-    store.address_line2,
-    [localityLine, store.postal_code].filter(Boolean).join(" "),
-  ].filter(Boolean);
+  const missing = entryGaps(store);
+  // Most entries are a name and a point; the slip says so and leads.
+  const isStub = missing.length >= 3;
 
-  const directionsUrl = hasCoords
-    ? `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`
-    : null;
+  const directionsUrl = hasCoords ? directionsFor(store.lat!, store.lng!) : null;
   const osmEditUrl = hasCoords
     ? `https://www.openstreetmap.org/edit#map=19/${store.lat}/${store.lng}`
     : "https://www.openstreetmap.org/";
+  const crumbs: Crumb[] = [
+    { label: provinceName(store.province) ?? "Unplaced" },
+    ...(store.city ? [{ label: store.city }] : []),
+    { label: store.name },
+  ];
   const correctionUrl = `/submit?${new URLSearchParams({
     store: store.slug,
     id: String(store.id),
@@ -100,180 +79,105 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
   })}`;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <PageShell crumbs={crumbs}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-5">
-        <Link href="/" className={monoLinkClass}>
-          ← Back to the atlas
-        </Link>
-        <ThemeToggle />
-      </header>
-
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-        <article>
-          <header>
-            {place && (
-              <p className="font-eyebrow text-sm uppercase tracking-[0.2em] text-moss">{place}</p>
-            )}
-            <h1 className="mt-2 font-display text-4xl font-bold text-ink sm:text-5xl">
-              {store.name}
-            </h1>
-            {store.short_description && (
-              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-ink-dim">
-                {store.short_description}
-              </p>
-            )}
-            {specialties.length > 0 && (
-              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Specialties">
-                {specialties.map((tag) => (
-                  <li
-                    key={tag}
-                    className="rounded-full bg-moss-deep/40 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-moss"
-                  >
-                    {specialtyLabel(tag)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </header>
-
-          {store.is_permanently_closed && (
-            <p
-              role="status"
-              className="mt-8 rounded-md border border-danger/50 bg-danger/10 px-4 py-3 text-sm text-ink"
-            >
-              <span className="font-mono text-xs uppercase tracking-widest text-danger">
-                Permanently closed
-              </span>
-              <span className="mx-2 text-ink-faint">·</span>
-              This store has closed. Its listing stays up as a record.
-            </p>
-          )}
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_minmax(0,24rem)]">
-            <section
-              aria-labelledby="store-details-heading"
-              className="rounded-md border border-line bg-bg-raised px-6 py-2"
-            >
-              <h2 id="store-details-heading" className="sr-only">
-                Store details
-              </h2>
-              <dl>
-                {(addressLines.length > 0 || directionsUrl) && (
-                  <DetailRow label="Address">
-                    {addressLines.length > 0 && (
-                      <address className="not-italic">
-                        {addressLines.map((line) => (
-                          <span key={line} className="block">
-                            {line}
-                          </span>
-                        ))}
-                      </address>
-                    )}
-                    {directionsUrl && (
-                      <a
-                        href={directionsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`mt-2 inline-block ${monoLinkClass}`}
-                      >
-                        Get directions ↗
-                      </a>
-                    )}
-                  </DetailRow>
-                )}
-
-                {store.phone && (
-                  <DetailRow label="Phone">
-                    <a href={`tel:${store.phone}`} className={linkClass}>
-                      {formatPhone(store.phone)}
-                    </a>
-                  </DetailRow>
-                )}
-
-                {store.website && (
-                  <DetailRow label="Website">
-                    <a
-                      href={store.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${linkClass} break-all`}
-                    >
-                      {displayUrl(store.website)} ↗
-                    </a>
-                  </DetailRow>
-                )}
-
-                <DetailRow label="Hours">
-                  {hoursRows.length > 0 ? (
-                    <table className="text-sm">
-                      <tbody>
-                        {hoursRows.map((row) => (
-                          <tr key={row.days}>
-                            <th
-                              scope="row"
-                              className="py-0.5 pr-6 text-left font-normal text-ink-dim"
-                            >
-                              {row.days}
-                            </th>
-                            <td className="py-0.5 text-ink">{row.hours}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <span className="text-ink-dim">
-                      {store.hours_raw
-                        ? "Hours vary — call ahead to confirm."
-                        : "Hours not listed yet."}
-                    </span>
-                  )}
-                </DetailRow>
-              </dl>
-            </section>
-
-            {hasCoords && (
-              <section aria-label="Location map">
-                <StoreLocationMap lat={store.lat!} lng={store.lng!} name={store.name} />
-              </section>
-            )}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-(--gutter) pt-10 pb-16 md:pt-16">
+        {/* A gazetteer entry: the entry in the main column, the location
+            inset beside it, then the correction slip and credits. On narrow
+            screens the inset sits between the details and the slip. */}
+        <article className="grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="min-w-0">
+            <StoreEntryBody store={store} />
           </div>
 
-          <aside className="mt-10 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-xl text-sm leading-relaxed text-ink-dim">
+          <aside aria-label="Location" className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-3">
+            {hasCoords ? (
+              <figure>
+                {/* The plate's double neatline: outer line-strong, inner ink-faint */}
+                <div className="border border-line-strong p-1.5">
+                  <div className="h-72 border border-ink-faint lg:h-80">
+                    <LazyStoreLocationMap lat={store.lat!} lng={store.lng!} name={store.name} />
+                  </div>
+                </div>
+                <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5 text-ui">
+                  <span className="font-mono text-meta text-ink-dim tabular-nums">
+                    {formatCoordinates(store.lat!, store.lng!)}
+                  </span>
+                  {directionsUrl && (
+                    <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                      Get directions ↗
+                    </a>
+                  )}
+                </figcaption>
+              </figure>
+            ) : (
+              <figure>
+                {/* Dashed: not on the plate (DESIGN.md, Shape) */}
+                <div className="grid h-56 place-items-center border border-dashed border-ink-faint p-6 text-center">
+                  <p className="font-display text-prose text-ink-quiet italic">
+                    {store.province ? `${provinceName(store.province)}. ` : ""}Exact location not yet recorded.
+                  </p>
+                </div>
+                <figcaption className="mt-3 text-ui">
+                  <Link href={correctionUrl} className={linkClass}>
+                    Know where it is? Tell us.
+                  </Link>
+                </figcaption>
+              </figure>
+            )}
+          </aside>
+
+          <div className="min-w-0 lg:col-start-1">
+            {/* The correction slip: one of the few boxed things in the system */}
+            <section
+              aria-labelledby="slip-heading"
+              className="flex flex-col gap-5 border border-t-2 border-ink-faint border-t-ink bg-bg-raised p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6"
+            >
+              <div className="max-w-md">
+                <h2 id="slip-heading" className="font-display text-heading font-semibold text-ink">
+                  {isStub ? "This entry is a stub" : "Something wrong or missing?"}
+                </h2>
+                <p className="mt-2 text-ui text-ink-dim">
+                  {isStub
+                    ? "Most entries in the atlas start like this: a name and a place on the map. If you know this store, you can fill it in."
+                    : "Hours change and shops move. A person reads every correction before it changes anything."}
+                </p>
+              </div>
+              <Link
+                href={correctionUrl}
+                className={buttonVariants({
+                  variant: isStub ? "default" : "outline",
+                  className: "self-start sm:self-auto",
+                })}
+              >
+                Suggest a correction
+              </Link>
+            </section>
+
+            <div className="mt-6 flex flex-col gap-2 text-meta text-ink-quiet sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
               <p>
                 Location and listing data ©{" "}
                 <a
                   href="https://www.openstreetmap.org/copyright"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={linkClass}
+                  className={creditLinkClass}
                 >
                   OpenStreetMap contributors
                 </a>
                 , available under the ODbL.
               </p>
-              <a
-                href={osmEditUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`mt-2 inline-block ${monoLinkClass}`}
-              >
+              <a href={osmEditUrl} target="_blank" rel="noopener noreferrer" className={`shrink-0 ${quietLinkClass}`}>
                 Improve this listing on OpenStreetMap ↗
               </a>
             </div>
-            <Link href={correctionUrl} className={`shrink-0 ${monoLinkClass}`}>
-              Suggest a correction →
-            </Link>
-          </aside>
+          </div>
         </article>
       </main>
-
-      <Footer />
-    </div>
+    </PageShell>
   );
 }
