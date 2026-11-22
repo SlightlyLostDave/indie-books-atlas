@@ -63,7 +63,7 @@ export default function MapExplorer({ initialData, lastSyncedAt }: MapExplorerPr
         <StoreMap
           data={mapData}
           onSelectStore={selectFromMap}
-          selectedSlug={selected?.properties.slug}
+          selected={selected}
           focus={selected && selection?.focus ? selected : null}
         />
       }

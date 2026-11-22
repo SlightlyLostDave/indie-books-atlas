@@ -292,6 +292,32 @@ body {
   animation: iba-trace 1.2s linear infinite;
 }
 
+/* Mapbox controls set as plate furniture: a hairline scale bar with mono
+   figures, and the attribution in the credits' face. Mapbox's logo and
+   attribution stay (they're required); only their dress changes. */
+.mapboxgl-map .mapboxgl-ctrl.mapboxgl-ctrl-scale {
+  border: 1px solid var(--ink-faint);
+  border-top: 0;
+  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  padding: 0 4px;
+}
+.mapboxgl-map .mapboxgl-ctrl.mapboxgl-ctrl-attrib {
+  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
+  color: var(--ink-dim);
+  font-family: var(--font-sans);
+}
+.mapboxgl-map .mapboxgl-ctrl.mapboxgl-ctrl-attrib a {
+  color: var(--ink-dim);
+}
+.mapboxgl-map .mapboxgl-ctrl.mapboxgl-ctrl-attrib.mapboxgl-compact,
+.mapboxgl-map .mapboxgl-ctrl-attrib-button {
+  border-radius: 0;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring;

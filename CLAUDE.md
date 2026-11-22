@@ -48,7 +48,7 @@ This app reads from a Supabase/PostGIS schema owned by the pipeline repo's migra
 
 ## Map architecture
 
-Load the full dataset from `stores_geojson` **once** on mount, via a Next.js API route or Supabase Edge Function. Render it as a single Mapbox GeoJSON source with clustering, and run every filter (specialty, province, open-now, text search) **client-side** against the already-loaded data — no round trips per filter change. At the current dataset size (~400–700 stores) this is the right call; don't reach for server-side filtering or pagination here.
+Load the full dataset from `stores_geojson` **once** on mount, via a Next.js API route or Supabase Edge Function. Render it as a single Mapbox GeoJSON source with clustering, and run every filter (specialty, province, open-now, text search) **client-side** against the already-loaded data — no round trips per filter change. At the current dataset size (~850 verified stores with coordinates; 852 as of November 2026) this is the right call; don't reach for server-side filtering or pagination here.
 
 ## Design direction
 

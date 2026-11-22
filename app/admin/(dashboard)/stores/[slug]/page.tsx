@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusMark, storeStatuses } from "@/components/admin/StatusMark";
 import { sourceLabel } from "@/components/admin/labels";
 import { StoreEntryBody } from "@/components/store/StoreEntry";
+import LazyStoreLocationMap from "@/components/store/LazyStoreLocationMap";
 import { Unknown } from "@/components/store/EntryParts";
 import { provinceName } from "@/lib/format";
 import { linkClass } from "@/lib/styles";
@@ -93,14 +94,26 @@ export default async function AdminStoreDetailPage({ params }: PageProps) {
         </div>
         <ul className="mt-2 flex flex-col gap-1 text-meta text-ink-dim">
           <li>Unsaved edits don&apos;t show here. The public page rebuilds daily, so it can trail a save by up to a day.</li>
-          <li>The street address isn&apos;t loaded in the admin, so it&apos;s left out. The map inset is left out too.</li>
+          <li>The street address isn&apos;t loaded in the admin, so it&apos;s left out.</li>
           {store.is_deleted && <li className="text-ink">This store is deleted, so the public atlas doesn&apos;t show it.</li>}
         </ul>
 
-        {/* The entry on a plate: double neatline, page ground inside. */}
+        {/* The entry on a plate: double neatline, page ground inside, with
+            the location inset beside it as the public page sets it. */}
         <div className="mt-(--gap-block) border border-line-strong p-1.5" inert>
-          <div className="border border-ink-faint bg-bg px-(--gutter) py-8">
-            <StoreEntryBody store={asPublicStore(store)} headingLevel="h2" addressUnavailable idPrefix="preview" />
+          <div className="grid gap-x-10 gap-y-8 border border-ink-faint bg-bg px-(--gutter) py-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <div className="min-w-0">
+              <StoreEntryBody store={asPublicStore(store)} headingLevel="h2" addressUnavailable idPrefix="preview" />
+            </div>
+            {store.lat != null && store.lng != null && (
+              <div className="min-w-0 lg:pt-3">
+                <div className="border border-line-strong p-1.5">
+                  <div className="h-64 border border-ink-faint">
+                    <LazyStoreLocationMap lat={store.lat} lng={store.lng} name={store.name} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

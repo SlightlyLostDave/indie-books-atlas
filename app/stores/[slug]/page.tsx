@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageShell, { type Crumb } from "@/components/layout/PageShell";
 import { StoreEntryBody, entryGaps, placeLine } from "@/components/store/StoreEntry";
-import StoreLocationMap from "@/components/store/StoreLocationMap";
+import LazyStoreLocationMap from "@/components/store/LazyStoreLocationMap";
 import { buttonVariants } from "@/components/ui/button";
 import { provinceName } from "@/lib/format";
 import { directionsUrl as directionsFor, formatCoordinates } from "@/lib/geo";
@@ -100,7 +100,7 @@ export default async function StorePage({ params }: PageProps<"/stores/[slug]">)
                 {/* The plate's double neatline: outer line-strong, inner ink-faint */}
                 <div className="border border-line-strong p-1.5">
                   <div className="h-72 border border-ink-faint lg:h-80">
-                    <StoreLocationMap lat={store.lat!} lng={store.lng!} name={store.name} />
+                    <LazyStoreLocationMap lat={store.lat!} lng={store.lng!} name={store.name} />
                   </div>
                 </div>
                 <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5 text-ui">
